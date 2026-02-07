@@ -13,4 +13,9 @@ class AcademicSchedule extends Model
         'end_time',
         'room_id'
     ];
+
+    public function room()
+    {
+        return $this->belongsTo(Room::class);
+    }
 }

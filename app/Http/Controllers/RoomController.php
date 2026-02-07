@@ -2,47 +2,36 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\DTOs\Room\RoomData;
+use App\Services\RoomService;
+use App\Http\Requests\RoomRequest;
+use App\Http\Resources\RoomResource;
+use App\Models\Room;
 
 class RoomController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    protected RoomService $service;
+
+    public function __construct(RoomService $service)
+    {
+        $this->service = $service;
+    }
+
     public function index()
     {
-        //
+        return RoomResource::collection(Room::all());
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function show($id)
     {
-        //
+        $room = Room::findOrFail($id);
+        return new RoomResource($room);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function store(RoomRequest $request)
     {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        $data = new RoomData($request->validated());
+        $room = $this->service->create($data);
+        return new RoomResource($room);
     }
 }

@@ -2,54 +2,30 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\DTOs\Event\EventData;
+use App\Services\EventService;
+use App\Http\Requests\EventRequest;
+use App\Http\Resources\EventResource;
 use App\Models\Event;
-
 
 class EventController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    protected EventService $service;
+
+    public function __construct(EventService $service)
+    {
+        $this->service = $service;
+    }
+
     public function index()
     {
-        return response()->json(Event::all());
+        return EventResource::collection(Event::all());
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function store(EventRequest $request)
     {
-        $event = Event::create([
-            ...$request->all(),
-            'created_by' => $request->user()->id
-        ]);
-
-        return response()->json($event, 201);
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        $data = new EventData($request->validated());
+        $event = $this->service->create($data, $request->user()->id);
+        return new EventResource($event);
     }
 }

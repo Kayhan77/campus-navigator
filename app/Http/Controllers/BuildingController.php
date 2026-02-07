@@ -2,49 +2,36 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Building;
-
+use App\DTOs\Building\BuildingData;
+use App\Services\BuildingService;
+use App\Http\Requests\BuildingRequest;
+use App\Http\Resources\BuildingResource;
 
 class BuildingController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    protected BuildingService $service;
+
+    public function __construct(BuildingService $service)
+    {
+        $this->service = $service;
+    }
+
     public function index()
     {
-        return response()->json(Building::with('rooms')->get());
+        return BuildingResource::collection(Building::with('rooms')->get());
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
     public function show($id)
     {
-        return response()->json(Building::with('rooms')->find($id));
+        $building = Building::with('rooms')->findOrFail($id);
+        return new BuildingResource($building);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function store(BuildingRequest $request)
     {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        $data = new BuildingData($request->validated());
+        $building = $this->service->create($data);
+        return new BuildingResource($building);
     }
 }
