@@ -1,6 +1,6 @@
 <?php
 
-namespace App\DTOs\LostItem;
+namespace App\DTOs;
 
 class LostItemData
 {

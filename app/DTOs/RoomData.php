@@ -1,6 +1,6 @@
 <?php
 
-namespace App\DTOs\Room;
+namespace App\DTOs;
 
 class RoomData
 {
@@ -13,5 +13,14 @@ class RoomData
         $this->building_id = $data['building_id'];
         $this->room_number = $data['room_number'];
         $this->floor = $data['floor'] ?? null;
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'building_id' => $this->building_id,
+            'room_number' => $this->room_number,
+            'floor' => $this->floor,
+        ];
     }
 }

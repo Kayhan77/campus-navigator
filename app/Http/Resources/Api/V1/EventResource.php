@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Resources;
+namespace App\Http\Resources\Api\V1;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class LostItemResource extends JsonResource
+class EventResource extends JsonResource
 {
     public function toArray($request): array
     {
@@ -13,8 +13,9 @@ class LostItemResource extends JsonResource
             'title' => $this->title,
             'description' => $this->description,
             'location' => $this->location,
-            'status' => $this->status,
-            'user_id' => $this->user_id,
+            'start_time' => $this->start_time,
+            'end_time' => $this->end_time,
+            'created_by' => $this->created_by,
         ];
     }
 }

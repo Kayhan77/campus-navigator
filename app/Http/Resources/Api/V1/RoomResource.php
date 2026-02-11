@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Resources;
+namespace App\Http\Resources\Api\V1;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -13,6 +13,12 @@ class RoomResource extends JsonResource
             'building_id' => $this->building_id,
             'room_number' => $this->room_number,
             'floor' => $this->floor,
+            'building' => $this->whenLoaded('building', function () {
+                return [
+                    'id' => $this->building->id,
+                    'name' => $this->building->name,
+                ];
+            }),
         ];
     }
 }

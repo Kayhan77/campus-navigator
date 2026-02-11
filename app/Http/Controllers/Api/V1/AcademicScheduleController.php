@@ -1,14 +1,15 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api\V1;
 
-use App\Models\AcademicSchedule;
-use App\Http\Requests\AcademicScheduleRequest;
-use App\Data\AcademicScheduleData;
+use App\DTOs\AcademicScheduleData;
 use App\Services\AcademicScheduleService;
-use App\Http\Resources\AcademicScheduleResource;
-use Illuminate\Http\Request;
+use App\Http\Requests\AcademicScheduleRequest;
+use App\Http\Resources\Api\V1\AcademicScheduleResource;
+use App\Models\AcademicSchedule;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Routing\Controller;
+
 
 class AcademicScheduleController extends Controller
 {
@@ -19,12 +20,21 @@ class AcademicScheduleController extends Controller
         $this->service = $service;
     }
 
+    // List all schedules
     public function index(): JsonResponse
     {
-        $schedules = AcademicSchedule::with('room.building')->get();
+        $schedules = $this->service->getAll();
         return response()->json(AcademicScheduleResource::collection($schedules));
     }
 
+    // Show single schedule
+    public function show(AcademicSchedule $academicSchedule): JsonResponse
+    {
+        $schedule = $this->service->getById($academicSchedule->id);
+        return response()->json(new AcademicScheduleResource($schedule));
+    }
+
+    // Create new schedule
     public function store(AcademicScheduleRequest $request): JsonResponse
     {
         $data = AcademicScheduleData::fromRequest($request);
@@ -33,11 +43,7 @@ class AcademicScheduleController extends Controller
         return response()->json(new AcademicScheduleResource($schedule), 201);
     }
 
-    public function show(AcademicSchedule $academicSchedule): JsonResponse
-    {
-        return response()->json(new AcademicScheduleResource($academicSchedule->load('room.building')));
-    }
-
+    // Update schedule
     public function update(AcademicScheduleRequest $request, AcademicSchedule $academicSchedule): JsonResponse
     {
         $data = AcademicScheduleData::fromRequest($request);
@@ -46,9 +52,10 @@ class AcademicScheduleController extends Controller
         return response()->json(new AcademicScheduleResource($schedule));
     }
 
+    // Delete schedule
     public function destroy(AcademicSchedule $academicSchedule): JsonResponse
     {
         $this->service->delete($academicSchedule);
-        return response()->json(null, 204);
+        return response()->json(['message' => 'Schedule deleted successfully'], 200);
     }
 }

@@ -1,23 +1,31 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\BuildingController;
-use App\Http\Controllers\EventController;
-use App\Http\Controllers\LostFoundController;
-use App\Http\Controllers\AcademicScheduleController;
+use App\Http\Controllers\Auth\JwtAuthController;
+use App\Http\Controllers\Api\V1\BuildingController;
+use App\Http\Controllers\Api\V1\EventController;
+use App\Http\Controllers\Api\V1\LostFoundController;
+use App\Http\Controllers\Api\V1\AcademicScheduleController;
+use App\Http\Controllers\Api\V1\RoomController;
 
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [JwtAuthController::class, 'register']);
+Route::post('/login', [JwtAuthController::class, 'login']);
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::prefix('v1')->group(function () {
 
+    Route::get('/me', [JwtAuthController::class, 'me']);
     Route::get('/user', fn ($request) => $request->user());
 
-    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/logout', [JwtAuthController::class, 'logout']);
+    Route::post('/refresh', [JwtAuthController::class, 'refresh']);
 
     Route::get('/buildings', [BuildingController::class, 'index']);
     Route::get('/buildings/{id}', [BuildingController::class, 'show']);
+    Route::post('/buildings', [BuildingController::class, 'store']);
+    
+    Route::get('/rooms', [RoomController::class, 'index']);
+    Route::get('/rooms/{id}', [RoomController::class, 'show']);
+    Route::post('/rooms', [RoomController::class, 'store']);
 
     Route::get('/events', [EventController::class, 'index']);
     Route::post('/events', [EventController::class, 'store']);

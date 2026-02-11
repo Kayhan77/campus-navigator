@@ -1,6 +1,6 @@
 <?php
 
-namespace App\DTOs\Building;
+namespace App\DTOs;
 
 class BuildingData
 {

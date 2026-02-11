@@ -1,6 +1,6 @@
 <?php
 
-namespace App\DTOs\Event;
+namespace App\DTOs;
 
 class EventData
 {
@@ -17,5 +17,16 @@ class EventData
         $this->location = $data['location'] ?? null;
         $this->start_time = $data['start_time'];
         $this->end_time = $data['end_time'];
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'title' => $this->title,
+            'description' => $this->description,
+            'location' => $this->location,
+            'start_time' => $this->start_time,
+            'end_time' => $this->end_time,
+        ];
     }
 }
