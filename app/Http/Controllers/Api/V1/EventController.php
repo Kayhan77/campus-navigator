@@ -8,7 +8,8 @@ use App\Http\Requests\EventRequest;
 use App\Http\Resources\Api\V1\EventResource;
 use App\Models\Event;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Routing\Controller;
+use App\Http\Controllers\Controller;
+
 
 class EventController extends Controller
 {
@@ -31,6 +32,7 @@ class EventController extends Controller
 
     public function store(EventRequest $request): JsonResponse
     {
+        $this->authorize('create', Event::class);
         $data = new EventData($request->validated());
         $event = $this->service->create($data, $request->user()->id);
         return response()->json(new EventResource($event), 201);
@@ -38,13 +40,17 @@ class EventController extends Controller
 
     public function update(EventRequest $request, Event $event): JsonResponse
     {
+        // $this->authorize('update', $event);
+        $this->authorize('update', $event); 
         $data = new EventData($request->validated());
         $event = $this->service->update($event, $data);
         return response()->json(new EventResource($event));
     }
 
-    public function destroy(Event $event): JsonResponse
+    public function delete(Event $event): JsonResponse
     {
+        // $this->authorize('delete', $event);
+        $this->authorize('delete', $event); 
         $this->service->delete($event);
         return response()->json(['message' => 'Event deleted successfully'], 200);
     }

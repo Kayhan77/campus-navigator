@@ -3,7 +3,8 @@
 namespace App\Services;
 
 use App\Models\AcademicSchedule;
-use App\Data\AcademicScheduleData;
+use App\DTOs\AcademicScheduleData;
+use App\Exceptions\ApiException;
 
 class AcademicScheduleService
 {
@@ -21,5 +22,15 @@ class AcademicScheduleService
     public function delete(AcademicSchedule $schedule): void
     {
         $schedule->delete();
+    }
+
+    public function getAll()
+    {
+        return AcademicSchedule::with('room.building')->get();
+    }
+
+    public function getById(int $id): AcademicSchedule
+    {
+        return AcademicSchedule::with('room.building')->findOrFail($id);
     }
 }

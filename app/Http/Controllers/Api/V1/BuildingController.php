@@ -7,7 +7,8 @@ use App\Services\BuildingService;
 use App\Http\Requests\BuildingRequest;
 use App\Http\Resources\Api\V1\BuildingResource;
 use App\Models\Building;
-use Illuminate\Routing\Controller;
+use Illuminate\Http\JsonResponse;
+use App\Http\Controllers\Controller;
 
 
 class BuildingController extends Controller
@@ -36,6 +37,7 @@ class BuildingController extends Controller
     // Create new building
     public function store(BuildingRequest $request)
     {
+        $this->authorize('create', Building::class);
         $data = new BuildingData($request->validated());
         $building = $this->service->create($data);
 
@@ -45,6 +47,7 @@ class BuildingController extends Controller
     // Update existing building
     public function update(BuildingRequest $request, Building $building)
     {
+        $this->authorize('update', Building::class);
         $data = new BuildingData($request->validated());
         $building = $this->service->update($building, $data);
 
@@ -54,6 +57,7 @@ class BuildingController extends Controller
     // Delete building
     public function destroy(Building $building)
     {
+        $this->authorize('delete', Building::class);
         $this->service->delete($building);
 
         return response()->json([

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Building;
 use App\DTOs\BuildingData;
+use App\Exceptions\ApiException;
 
 class BuildingService
 {

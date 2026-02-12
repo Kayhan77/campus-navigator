@@ -52,4 +52,9 @@ class User extends Authenticatable implements JWTSubject
     {
     return $this->role === 'admin';
     }
+
+    public function isStudent(): bool
+    {
+        return $this->role === 'student';
+    }
 }

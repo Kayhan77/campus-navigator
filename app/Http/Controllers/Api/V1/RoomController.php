@@ -7,8 +7,8 @@ use App\Services\RoomService;
 use App\Http\Requests\RoomRequest;
 use App\Http\Resources\Api\V1\RoomResource;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Routing\Controller;
-
+use App\Http\Controllers\Controller;
+use App\Models\Room;
 
 class RoomController extends Controller
 {
@@ -42,6 +42,7 @@ class RoomController extends Controller
      */
     public function store(RoomRequest $request): JsonResponse
     {
+        $this->authorize('create', Room::class);
         $data = new RoomData($request->validated());
         $room = $this->service->create($data);
 
@@ -53,6 +54,7 @@ class RoomController extends Controller
      */
     public function update(RoomRequest $request, int $id): JsonResponse
     {
+        $this->authorize('update', Room::class);
         $data = new RoomData($request->validated());
         $room = $this->service->update($id, $data);
 
@@ -64,6 +66,7 @@ class RoomController extends Controller
      */
     public function destroy(int $id): JsonResponse
     {
+        $this->authorize('delete', Room::class);
         $this->service->delete($id);
 
         return response()->json([

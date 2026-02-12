@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Event;
 use App\DTOs\EventData;
+use App\Exceptions\ApiException;
 
 class EventService
 {
@@ -34,5 +35,15 @@ class EventService
     public function delete(Event $event): bool
     {
         return $event->delete();
+    }
+
+     public function getAll()
+    {
+        return Event::with('events')->get();
+    }
+
+    public function getById(int $id): Event
+    {
+        return Event::with('events')->findOrFail($id);
     }
 }

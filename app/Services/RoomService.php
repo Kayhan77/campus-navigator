@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\DTOs\RoomData;
 use App\Models\Room;
+use App\Exceptions\ApiException;
 
 class RoomService
 {
@@ -53,5 +54,21 @@ class RoomService
     {
         $room = Room::findOrFail($id);
         $room->delete();
+    }
+
+     public function getAll()
+    {
+        if(Room::count() === 0) {
+            throw new ApiException('No rooms found', 404);
+        }
+        return Room::with('building')->get();
+    }
+
+    public function getById(int $id): Room
+    {
+        if(!Room::find($id)) {
+            throw new ApiException('Room not found', 404);
+        }
+        return Room::with('building')->findOrFail($id);
     }
 }

@@ -1,23 +1,29 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Auth\JwtAuthController;
+use App\Http\Controllers\Api\V1\Auth\JwtAuthController;
 use App\Http\Controllers\Api\V1\BuildingController;
 use App\Http\Controllers\Api\V1\EventController;
 use App\Http\Controllers\Api\V1\LostFoundController;
 use App\Http\Controllers\Api\V1\AcademicScheduleController;
 use App\Http\Controllers\Api\V1\RoomController;
-
-Route::post('/register', [JwtAuthController::class, 'register']);
-Route::post('/login', [JwtAuthController::class, 'login']);
+use App\Http\Controllers\Api\V1\Auth\RefreshTokenController;
+use App\Http\Controllers\Api\V1\Auth\RegisteredUserController;
 
 Route::prefix('v1')->group(function () {
+
+    Route::post('/register', [RegisteredUserController::class, 'store']);
+    Route::post('/login', [JwtAuthController::class, 'login']);
+
+});
+
+Route::middleware('auth:api')->prefix('v1')->group(function () {
 
     Route::get('/me', [JwtAuthController::class, 'me']);
     Route::get('/user', fn ($request) => $request->user());
 
     Route::post('/logout', [JwtAuthController::class, 'logout']);
-    Route::post('/refresh', [JwtAuthController::class, 'refresh']);
+    Route::post('/refresh', [RefreshTokenController::class, 'refresh']);
 
     Route::get('/buildings', [BuildingController::class, 'index']);
     Route::get('/buildings/{id}', [BuildingController::class, 'show']);
