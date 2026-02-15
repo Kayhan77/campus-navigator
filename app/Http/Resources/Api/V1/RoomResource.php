@@ -13,6 +13,7 @@ class RoomResource extends JsonResource
             'building_id' => $this->building_id,
             'room_number' => $this->room_number,
             'floor' => $this->floor,
+            'capacity'    => $this->capacity ?? null,
             'building' => $this->whenLoaded('building', function () {
                 return [
                     'id' => $this->building->id,

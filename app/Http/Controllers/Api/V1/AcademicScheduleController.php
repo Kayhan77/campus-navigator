@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\DTOs\AcademicScheduleData;
+use App\DTOs\AcademicSchedule\CreateAcademicScheduleDTO;
+use App\DTOs\AcademicSchedule\UpdateAcademicScheduleDTO;
 use App\Services\AcademicScheduleService;
-use App\Http\Requests\AcademicScheduleRequest;
+use App\Http\Requests\AcademicSchedule\AcademicScheduleRequest;
+use App\Http\Requests\AcademicSchedule\UpdateAcademicScheduleRequest;
 use App\Http\Resources\Api\V1\AcademicScheduleResource;
 use App\Models\AcademicSchedule;
 use Illuminate\Http\JsonResponse;
@@ -37,16 +39,18 @@ class AcademicScheduleController extends Controller
     // Create new schedule
     public function store(AcademicScheduleRequest $request): JsonResponse
     {
-        $data = AcademicScheduleData::fromRequest($request);
+        $data = CreateAcademicScheduleDTO::fromRequest($request);
         $schedule = $this->service->create($data);
 
         return response()->json(new AcademicScheduleResource($schedule), 201);
     }
 
     // Update schedule
-    public function update(AcademicScheduleRequest $request, AcademicSchedule $academicSchedule): JsonResponse
+    public function update(UpdateAcademicScheduleRequest $request, AcademicSchedule $academicSchedule): JsonResponse
     {
-        $data = AcademicScheduleData::fromRequest($request);
+            $this->authorize('update', $academicSchedule);
+
+        $data = new UpdateAcademicScheduleDTO($request->validated());
         $schedule = $this->service->update($academicSchedule, $data);
 
         return response()->json(new AcademicScheduleResource($schedule));

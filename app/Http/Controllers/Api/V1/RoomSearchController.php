@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\RoomSearchRequest;
 use App\Services\RoomSearchService;
 use App\Http\Resources\Api\V1\RoomResource;
+use App\DTOs\RoomSearchDTO;
 
 class RoomSearchController extends Controller
 {
@@ -18,7 +19,7 @@ class RoomSearchController extends Controller
 
     public function index(RoomSearchRequest $request)
     {
-        $dto = new \App\DTOs\Room\RoomSearchDTO($request->validated());
+        $dto = new RoomSearchDTO($request->validated());
 
         $rooms = $this->service->search($dto);
 

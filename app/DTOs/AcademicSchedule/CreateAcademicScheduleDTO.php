@@ -1,8 +1,8 @@
 <?php
 
-namespace App\DTOs;
+namespace App\DTOs\AcademicSchedule;
 
-class AcademicScheduleData
+class CreateAcademicScheduleDTO
 {
     public function __construct(
         public string $course_name,

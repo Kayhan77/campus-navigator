@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\DTOs\RoomData;
+use App\DTOs\Room\CreateRoomDTO;
+use App\DTOs\Room\UpdateRoomDTO;
 use App\Services\RoomService;
-use App\Http\Requests\RoomRequest;
+use App\Http\Requests\Room\RoomRequest;
+use App\Http\Requests\Room\UpdateRoomRequest;
 use App\Http\Resources\Api\V1\RoomResource;
 use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
@@ -43,7 +45,7 @@ class RoomController extends Controller
     public function store(RoomRequest $request): JsonResponse
     {
         $this->authorize('create', Room::class);
-        $data = new RoomData($request->validated());
+        $data = new CreateRoomDTO($request->validated());
         $room = $this->service->create($data);
 
         return response()->json(new RoomResource($room), 201);
@@ -52,10 +54,10 @@ class RoomController extends Controller
     /**
      * PUT /rooms/{id}
      */
-    public function update(RoomRequest $request, int $id): JsonResponse
+    public function update(UpdateRoomRequest $request, int $id): JsonResponse
     {
         $this->authorize('update', Room::class);
-        $data = new RoomData($request->validated());
+        $data = new UpdateRoomDTO($request->validated());
         $room = $this->service->update($id, $data);
 
         return response()->json(new RoomResource($room));

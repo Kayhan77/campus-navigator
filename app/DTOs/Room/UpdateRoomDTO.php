@@ -1,26 +1,26 @@
 <?php
 
-namespace App\DTOs;
+namespace App\DTOs\Room;
 
-class RoomData
+class UpdateRoomDTO
 {
-    public int $building_id;
-    public string $room_number;
+    public ?int $building_id;
+    public ?string $room_number;
     public ?int $floor;
 
     public function __construct(array $data)
     {
-        $this->building_id = $data['building_id'];
-        $this->room_number = $data['room_number'];
+        $this->building_id = $data['building_id'] ?? null;
+        $this->room_number = $data['room_number'] ?? null;
         $this->floor = $data['floor'] ?? null;
     }
 
     public function toArray(): array
     {
-        return [
+        return array_filter([
             'building_id' => $this->building_id,
             'room_number' => $this->room_number,
             'floor' => $this->floor,
-        ];
+        ], fn($value) => $value !== null);
     }
 }

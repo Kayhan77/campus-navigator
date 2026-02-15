@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Room;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class RoomRequest extends FormRequest
+class UpdateRoomRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -14,8 +14,8 @@ class RoomRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'building_id' => 'required|exists:buildings,id',
-            'room_number' => 'required|string|max:50',
+            'building_id' => 'sometimes|exists:buildings,id',
+            'room_number' => 'sometimes|string|max:50',
             'floor' => 'nullable|integer',
         ];
     }

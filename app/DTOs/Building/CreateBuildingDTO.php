@@ -1,8 +1,8 @@
 <?php
 
-namespace App\DTOs;
+namespace App\DTOs\Building;
 
-class BuildingData
+class CreateBuildingDTO
 {
     public string $name;
     public float $latitude;

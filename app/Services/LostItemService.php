@@ -2,9 +2,12 @@
 
 namespace App\Services;
 
-use App\DTOs\LostItemData;
+use App\DTOs\LostItem\CreateLostItemDTO;
+use App\DTOs\LostItem\UpdateLostItemDTO;
 use App\Models\LostItem;
-use App\Http\Resources\LostItemResource;
+use App\Http\Resources\Api\V1\LostItemResource;
+use App\Exceptions\ApiException;
+
 
 class LostItemService
 {
@@ -19,7 +22,7 @@ class LostItemService
     /**
      * Create a new lost item
      */
-    public function create(LostItemData $data, int $userId): LostItem
+    public function create(CreateLostItemDTO $data, int $userId): LostItem
     {
         return LostItem::create([
             'title' => $data->title,
@@ -41,7 +44,7 @@ class LostItemService
     /**
      * Update a lost item
      */
-    public function update(LostItem $item, LostItemData $data): LostItem
+    public function update(LostItem $item, UpdateLostItemDTO $data): LostItem
     {
         $item->update((array) $data);
         return $item;
@@ -53,5 +56,15 @@ class LostItemService
     public function delete(LostItem $item): bool
     {
         return $item->delete();
+    }
+
+     public function getAll()
+    {
+        return LostItem::with('user')->get();
+    }
+
+    public function getById(int $id): LostItem
+    {
+        return LostItem::with('user')->findOrFail($id);
     }
 }

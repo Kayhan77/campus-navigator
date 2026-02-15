@@ -3,12 +3,13 @@
 namespace App\Services;
 
 use App\Models\Building;
-use App\DTOs\BuildingData;
+use App\DTOs\BUilding\CreateBuildingDTO;
+use App\DTOs\BUilding\UpdateBuildingDTO;
 use App\Exceptions\ApiException;
 
 class BuildingService
 {
-    public function create(BuildingData $data): Building
+    public function create(CreateBuildingDTO $data): Building
     {
         return Building::create([
             'name' => $data->name,
@@ -18,7 +19,7 @@ class BuildingService
         ]);
     }
 
-    public function update(Building $building, BuildingData $data): Building
+    public function update(Building $building, UpdateBuildingDTO $data): Building
     {
         $building->update([
             'name' => $data->name,

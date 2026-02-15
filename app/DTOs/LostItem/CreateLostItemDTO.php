@@ -1,8 +1,8 @@
 <?php
 
-namespace App\DTOs;
+namespace App\DTOs\LostItem;
 
-class LostItemData
+class CreateLostItemDTO
 {
     public string $title;
     public ?string $description;

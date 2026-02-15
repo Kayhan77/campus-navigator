@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\DTOs\LostItemData;
+use App\DTOs\LostItem\CreateLostItemDTO;
+use App\DTOs\LostItem\UpdateLostItemDTO;
 use App\Services\LostItemService;
-use App\Http\Requests\LostItemRequest;
+use App\Http\Requests\LostItem\LostItemRequest;
+use App\Http\Requests\LostItem\UpdateLostItemRequest;
 use App\Http\Resources\Api\V1\LostItemResource;
 use App\Models\LostItem;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 
 
@@ -32,9 +35,8 @@ class LostFoundController extends Controller
      */
     public function store(LostItemRequest $request)
     {
-        $data = new LostItemData($request->validated());
+        $data = new CreateLostItemDTO($request->validated());
         $item = $this->service->create($data, $request->user()->id);
-
         return new LostItemResource($item);
     }
 
@@ -49,12 +51,14 @@ class LostFoundController extends Controller
     /**
      * Update a lost item
      */
-    public function update(LostItemRequest $request, LostItem $lostItem)
+    public function update(UpdateLostItemRequest $request, LostItem $lostItem): JsonResponse
     {
-        $data = new LostItemData($request->validated());
+        $this->authorize('update', $lostItem);
+
+        $data = new UpdateLostItemDTO($request->validated());
         $item = $this->service->update($lostItem, $data);
 
-        return new LostItemResource($item);
+        return response()->json(new LostItemResource($item));
     }
 
     /**

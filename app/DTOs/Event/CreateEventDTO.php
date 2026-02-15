@@ -1,8 +1,8 @@
 <?php
 
-namespace App\DTOs;
+namespace App\DTOs\Event;
 
-class EventData
+class CreateEventDTO
 {
     public string $title;
     public ?string $description;
