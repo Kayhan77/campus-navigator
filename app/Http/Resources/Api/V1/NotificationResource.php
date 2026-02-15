@@ -12,7 +12,10 @@ class NotificationResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'message' => $this->message,
-            'target_role' => $this->target_role,
+            'type' => $this->type,
+            'read' => $this->read_at !== null,
+            'user' => new UserResource($this->whenLoaded('user')),
+            'created_at' => $this->created_at?->toDateTimeString(),
         ];
     }
 }

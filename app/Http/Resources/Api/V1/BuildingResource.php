@@ -14,7 +14,7 @@ class BuildingResource extends JsonResource
             'latitude' => $this->latitude,
             'longitude' => $this->longitude,
             'description' => $this->description,
-            'rooms' => $this->whenLoaded('rooms')
+            'rooms' => RoomResource::collection($this->whenLoaded('rooms'))
         ];
     }
 }

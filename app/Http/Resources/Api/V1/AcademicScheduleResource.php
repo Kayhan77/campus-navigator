@@ -12,17 +12,10 @@ class AcademicScheduleResource extends JsonResource
             'id' => $this->id,
             'course_name' => $this->course_name,
             'day' => $this->day,
-            'start_time' => $this->start_time,
-            'end_time' => $this->end_time,
-            'room' => [
-                'id' => $this->room->id,
-                'room_number' => $this->room->room_number,
-                'floor' => $this->room->floor,
-                'building' => [
-                    'id' => $this->room->building->id,
-                    'name' => $this->room->building->name,
-                ],
-            ],
+            'start_time' => $this->start_time?->format('H:i'),
+            'end_time' => $this->end_time?->format('H:i'),
+            'room' => new RoomResource($this->whenLoaded('room')),
+            'created_at' => $this->created_at?->toDateTimeString(),
         ];
     }
 }

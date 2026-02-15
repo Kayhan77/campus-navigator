@@ -8,7 +8,6 @@ use App\Services\RoomService;
 use App\Http\Requests\Room\RoomRequest;
 use App\Http\Requests\Room\UpdateRoomRequest;
 use App\Http\Resources\Api\V1\RoomResource;
-use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use App\Models\Room;
 
@@ -24,55 +23,55 @@ class RoomController extends Controller
     /**
      * GET /rooms
      */
-    public function index(): JsonResponse
+    public function index()
     {
         $rooms = $this->service->index();
-        return response()->json(RoomResource::collection($rooms));
+        return RoomResource::collection($rooms);
     }
 
     /**
      * GET /rooms/{id}
      */
-    public function show(int $id): JsonResponse
+    public function show(int $id)
     {
         $room = $this->service->show($id);
-        return response()->json(new RoomResource($room));
+        return new RoomResource($room);
     }
 
     /**
      * POST /rooms
      */
-    public function store(RoomRequest $request): JsonResponse
+    public function store(RoomRequest $request)
     {
         $this->authorize('create', Room::class);
         $data = new CreateRoomDTO($request->validated());
         $room = $this->service->create($data);
 
-        return response()->json(new RoomResource($room), 201);
+        return new RoomResource($room);
     }
 
     /**
      * PUT /rooms/{id}
      */
-    public function update(UpdateRoomRequest $request, int $id): JsonResponse
+    public function update(UpdateRoomRequest $request, int $id)
     {
         $this->authorize('update', Room::class);
         $data = new UpdateRoomDTO($request->validated());
         $room = $this->service->update($id, $data);
 
-        return response()->json(new RoomResource($room));
+        return new RoomResource($room);
     }
 
     /**
      * DELETE /rooms/{id}
      */
-    public function destroy(int $id): JsonResponse
+    public function destroy(int $id)
     {
         $this->authorize('delete', Room::class);
         $this->service->delete($id);
 
-        return response()->json([
+        return [
             'message' => 'Room deleted successfully'
-        ]);
+        ];
     }
 }

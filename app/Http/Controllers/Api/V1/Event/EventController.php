@@ -9,7 +9,6 @@ use App\Http\Requests\Event\EventRequest;
 use App\Http\Requests\Event\UpdateEventRequest;
 use App\Http\Resources\Api\V1\EventResource;
 use App\Models\Event;
-use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 
 class EventController extends Controller
@@ -21,37 +20,39 @@ class EventController extends Controller
         $this->service = $service;
     }
 
-    public function index(): JsonResponse
+    public function index()
     {
         $events = $this->service->getAll();
-        return response()->json(EventResource::collection($events));
+        return EventResource::collection($events);
     }
 
-    public function show(Event $event): JsonResponse
+    public function show(Event $event)
     {
         return response()->json(new EventResource($this->service->getById($event->id)));
     }
 
-    public function store(EventRequest $request): JsonResponse
+    public function store(EventRequest $request)
     {
         $this->authorize('create', Event::class);
         $data = new CreateEventDTO($request->validated());
         $event = $this->service->create($data, $request->user()->id);
-        return response()->json(new EventResource($event), 201);
+        return new EventResource($event);
     }
 
-    public function update(UpdateEventRequest $request, Event $event): JsonResponse
+    public function update(UpdateEventRequest $request, Event $event)
     {
         $this->authorize('update', $event);
         $data = new UpdateEventDTO($request->validated());
         $event = $this->service->update($event, $data);
-        return response()->json(new EventResource($event));
+        return new EventResource($event);
     }
 
-    public function destroy(Event $event): JsonResponse
+    public function destroy(Event $event)
     {
         $this->authorize('delete', $event);
         $this->service->delete($event);
-        return response()->json(['message' => 'Event deleted successfully'], 200);
+        return [
+            'message' => 'Event deleted successfully'
+        ];
     }
 }

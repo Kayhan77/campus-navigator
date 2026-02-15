@@ -15,6 +15,9 @@ class EventResource extends JsonResource
             'location' => $this->location,
             'start_time' => $this->start_time,
             'end_time' => $this->end_time,
+            'room' => new RoomResource($this->whenLoaded('room')),
+            'building' => new BuildingResource($this->whenLoaded('building')),
+            'created_at' => $this->created_at?->toDateTimeString(),
             'created_by' => $this->created_by,
         ];
     }

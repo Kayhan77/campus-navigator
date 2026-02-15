@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Api\V1;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Http\Resources\Api\V1\UserResource;
 
 class LostItemResource extends JsonResource
 {
@@ -14,8 +15,9 @@ class LostItemResource extends JsonResource
             'description' => $this->description,
             'location' => $this->location,
             'status' => $this->status,
-            'user_id' => $this->user_id,
-            'created_at' => $this->created_at,
+            'user' => new UserResource($this->whenLoaded('user')),
+            'found_at' => $this->found_at?->toDateTimeString(),
+            'created_at' => $this->created_at?->toDateTimeString(),
             'updated_at' => $this->updated_at,
         ];
     }

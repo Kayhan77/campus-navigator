@@ -27,7 +27,8 @@ class LostFoundController extends Controller
      */
     public function index()
     {
-        return $this->service->index();
+        $buildings = $this->service->getAll();
+        return LostItemResource::collection($buildings);
     }
 
     /**
@@ -51,14 +52,14 @@ class LostFoundController extends Controller
     /**
      * Update a lost item
      */
-    public function update(UpdateLostItemRequest $request, LostItem $lostItem): JsonResponse
+    public function update(UpdateLostItemRequest $request, LostItem $lostItem)
     {
         $this->authorize('update', $lostItem);
 
         $data = new UpdateLostItemDTO($request->validated());
         $item = $this->service->update($lostItem, $data);
 
-        return response()->json(new LostItemResource($item));
+        return new LostItemResource($item);
     }
 
     /**
