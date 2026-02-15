@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\AcademicSchedule;
 use App\DTOs\AcademicSchedule\CreateAcademicScheduleDTO;
 use App\DTOs\AcademicSchedule\UpdateAcademicScheduleDTO;
-use App\Exceptions\ApiException;
 
 class AcademicScheduleService
 {
@@ -27,11 +26,13 @@ class AcademicScheduleService
 
     public function getAll()
     {
-        return AcademicSchedule::with('room.building')->get();
+        // Professional: use latest() or paginate if API may return many schedules
+        return AcademicSchedule::with('room.building')->latest()->get();
     }
 
-    public function getById(int $id): AcademicSchedule
+    public function getById(AcademicSchedule $schedule): AcademicSchedule
     {
-        return AcademicSchedule::with('room.building')->findOrFail($id);
+        // Clean: Route Model Binding already provides the schedule
+        return $schedule->load('room.building');
     }
 }

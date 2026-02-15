@@ -2,18 +2,34 @@
 
 namespace App\DTOs\LostItem;
 
+use App\Http\Requests\LostItem\LostItemRequest;
+
 class CreateLostItemDTO
 {
-    public string $title;
-    public ?string $description;
-    public ?string $location;
-    public string $status;
+    public function __construct(
+        public string $title,
+        public ?string $description = null,
+        public ?string $location = null,
+        public string $status = 'lost'
+    ) {}
 
-    public function __construct(array $data)
+    public static function fromRequest(LostItemRequest $request): self
     {
-        $this->title = $data['title'];
-        $this->description = $data['description'] ?? null;
-        $this->location = $data['location'] ?? null;
-        $this->status = $data['status'] ?? 'lost';
+        return new self(
+            $request->title,
+            $request->description,
+            $request->location,
+            $request->status ?? 'lost'
+        );
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'title' => $this->title,
+            'description' => $this->description,
+            'location' => $this->location,
+            'status' => $this->status,
+        ];
     }
 }

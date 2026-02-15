@@ -28,7 +28,7 @@ class EventController extends Controller
 
     public function show(Event $event)
     {
-        return response()->json(new EventResource($this->service->getById($event->id)));
+        return new EventResource($this->service->getById($event->id));
     }
 
     public function store(EventRequest $request)

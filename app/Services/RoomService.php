@@ -30,11 +30,7 @@ class RoomService
      */
     public function create(CreateRoomDTO $data): Room
     {
-        return Room::create([
-            'building_id' => $data->building_id,
-            'room_number' => $data->room_number,
-            'floor' => $data->floor,
-        ]);
+        return Room::create($data->toArray());
     }
 
     /**

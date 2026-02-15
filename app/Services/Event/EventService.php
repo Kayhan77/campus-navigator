@@ -10,14 +10,7 @@ class EventService
 {
     public function create(CreateEventDTO $data, int $userId): Event
     {
-        return Event::create([
-            'title' => $data->title,
-            'description' => $data->description,
-            'location' => $data->location,
-            'start_time' => $data->start_time,
-            'end_time' => $data->end_time,
-            'created_by' => $userId,
-        ]);
+        return Event::create($data->toArray($userId));
     }
 
     public function update(Event $event, UpdateEventDTO $data): Event
@@ -33,11 +26,11 @@ class EventService
 
     public function getAll()
     {
-        return Event::all();
+        return Event::latest()->paginate(10);
     }
 
-    public function getById(int $id): Event
+    public function getById(Event $event): Event
     {
-        return Event::findOrFail($id);
+        return $event;
     }
 }

@@ -19,7 +19,7 @@ class CreateEventDTO
         $this->end_time = $data['end_time'];
     }
 
-    public function toArray(): array
+    public function toArray(int $userId): array
     {
         return [
             'title' => $this->title,
@@ -27,6 +27,7 @@ class CreateEventDTO
             'location' => $this->location,
             'start_time' => $this->start_time,
             'end_time' => $this->end_time,
+            'created_by' => $userId,
         ];
     }
 }

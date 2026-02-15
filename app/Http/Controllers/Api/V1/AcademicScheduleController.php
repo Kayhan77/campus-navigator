@@ -11,7 +11,6 @@ use App\Http\Resources\Api\V1\AcademicScheduleResource;
 use App\Models\AcademicSchedule;
 use Illuminate\Routing\Controller;
 
-
 class AcademicScheduleController extends Controller
 {
     protected AcademicScheduleService $service;
@@ -24,22 +23,21 @@ class AcademicScheduleController extends Controller
     // List all schedules
     public function index()
     {
-        $schedules = $this->service->getAll();
-        return AcademicScheduleResource::collection($schedules);
+        return AcademicScheduleResource::collection($this->service->getAll());
     }
 
     // Show single schedule
     public function show(AcademicSchedule $academicSchedule)
     {
-        $schedule = $this->service->getById($academicSchedule->id);
-        return new AcademicScheduleResource($schedule);
+        return new AcademicScheduleResource($this->service->getById($academicSchedule));
     }
 
     // Create new schedule
     public function store(AcademicScheduleRequest $request)
     {
-        $data = CreateAcademicScheduleDTO::fromRequest($request);
-        $schedule = $this->service->create($data);
+        $dto = CreateAcademicScheduleDTO::fromRequest($request);
+
+        $schedule = $this->service->create($dto);
 
         return new AcademicScheduleResource($schedule);
     }
@@ -47,10 +45,11 @@ class AcademicScheduleController extends Controller
     // Update schedule
     public function update(UpdateAcademicScheduleRequest $request, AcademicSchedule $academicSchedule)
     {
-            $this->authorize('update', $academicSchedule);
+        $this->authorize('update', $academicSchedule);
 
-        $data = new UpdateAcademicScheduleDTO($request->validated());
-        $schedule = $this->service->update($academicSchedule, $data);
+        $dto = new UpdateAcademicScheduleDTO($request->validated());
+
+        $schedule = $this->service->update($academicSchedule, $dto);
 
         return new AcademicScheduleResource($schedule);
     }
@@ -58,9 +57,10 @@ class AcademicScheduleController extends Controller
     // Delete schedule
     public function destroy(AcademicSchedule $academicSchedule)
     {
+        $this->authorize('delete', $academicSchedule);
+
         $this->service->delete($academicSchedule);
-        return[
-            'message' => 'Schedule deleted successfully'
-        ];
+
+        return ['message' => 'Schedule deleted successfully'];
     }
 }

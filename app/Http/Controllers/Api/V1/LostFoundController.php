@@ -9,9 +9,7 @@ use App\Http\Requests\LostItem\LostItemRequest;
 use App\Http\Requests\LostItem\UpdateLostItemRequest;
 use App\Http\Resources\Api\V1\LostItemResource;
 use App\Models\LostItem;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
-
 
 class LostFoundController extends Controller
 {
@@ -22,56 +20,47 @@ class LostFoundController extends Controller
         $this->service = $service;
     }
 
-    /**
-     * List all lost items
-     */
+    // List all lost items
     public function index()
     {
-        $buildings = $this->service->getAll();
-        return LostItemResource::collection($buildings);
+        return LostItemResource::collection($this->service->getAll());
     }
 
-    /**
-     * Store a new lost item
-     */
+    // Show single lost item
+    public function show(LostItem $lostItem)
+    {
+        return new LostItemResource($this->service->getById($lostItem));
+    }
+
+    // Create new lost item
     public function store(LostItemRequest $request)
     {
-        $data = new CreateLostItemDTO($request->validated());
-        $item = $this->service->create($data, $request->user()->id);
+        $this->authorize('create', LostItem::class);
+
+        $dto = CreateLostItemDTO::fromRequest($request);
+        $item = $this->service->create($dto, $request->user()->id);
+
         return new LostItemResource($item);
     }
 
-    /**
-     * Show a single lost item
-     */
-    public function show(LostItem $lostItem)
-    {
-        return $this->service->show($lostItem);
-    }
-
-    /**
-     * Update a lost item
-     */
+    // Update lost item
     public function update(UpdateLostItemRequest $request, LostItem $lostItem)
     {
         $this->authorize('update', $lostItem);
 
-        $data = new UpdateLostItemDTO($request->validated());
-        $item = $this->service->update($lostItem, $data);
+        $dto = new UpdateLostItemDTO($request->validated());
+        $item = $this->service->update($lostItem, $dto);
 
         return new LostItemResource($item);
     }
 
-    /**
-     * Delete a lost item
-     */
+    // Delete lost item
     public function destroy(LostItem $lostItem)
     {
+        $this->authorize('delete', $lostItem);
+
         $this->service->delete($lostItem);
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Item deleted successfully'
-        ]);
+        return ['message' => 'Item deleted successfully'];
     }
 }

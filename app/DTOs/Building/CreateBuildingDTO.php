@@ -2,18 +2,34 @@
 
 namespace App\DTOs\Building;
 
+use App\Http\Requests\Building\BuildingRequest;
+
 class CreateBuildingDTO
 {
-    public string $name;
-    public float $latitude;
-    public float $longitude;
-    public ?string $description;
+    public function __construct(
+        public string $name,
+        public float $latitude,
+        public float $longitude,
+        public ?string $description = null
+    ) {}
 
-    public function __construct(array $data)
+    public static function fromRequest(BuildingRequest $request): self
     {
-        $this->name = $data['name'];
-        $this->latitude = $data['latitude'];
-        $this->longitude = $data['longitude'];
-        $this->description = $data['description'] ?? null;
+        return new self(
+            $request->name,
+            $request->latitude,
+            $request->longitude,
+            $request->description
+        );
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'name' => $this->name,
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
+            'description' => $this->description,
+        ];
     }
 }

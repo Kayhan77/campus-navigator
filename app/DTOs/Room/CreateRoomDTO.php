@@ -2,17 +2,23 @@
 
 namespace App\DTOs\Room;
 
+use App\Http\Requests\Room\RoomRequest;
+
 class CreateRoomDTO
 {
-    public int $building_id;
-    public string $room_number;
-    public ?int $floor;
+    public function __construct(
+        public int $building_id,
+        public string $room_number,
+        public ?int $floor = null
+    ) {}
 
-    public function __construct(array $data)
+    public static function fromRequest(RoomRequest $request): self
     {
-        $this->building_id = $data['building_id'];
-        $this->room_number = $data['room_number'];
-        $this->floor = $data['floor'] ?? null;
+        return new self(
+            $request->building_id,
+            $request->room_number,
+            $request->floor
+        );
     }
 
     public function toArray(): array

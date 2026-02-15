@@ -3,31 +3,19 @@
 namespace App\Services;
 
 use App\Models\Building;
-use App\DTOs\BUilding\CreateBuildingDTO;
-use App\DTOs\BUilding\UpdateBuildingDTO;
-use App\Exceptions\ApiException;
+use App\DTOs\Building\CreateBuildingDTO;
+use App\DTOs\Building\UpdateBuildingDTO;
 
 class BuildingService
 {
     public function create(CreateBuildingDTO $data): Building
     {
-        return Building::create([
-            'name' => $data->name,
-            'latitude' => $data->latitude,
-            'longitude' => $data->longitude,
-            'description' => $data->description,
-        ]);
+        return Building::create($data->toArray());
     }
 
     public function update(Building $building, UpdateBuildingDTO $data): Building
     {
-        $building->update([
-            'name' => $data->name,
-            'latitude' => $data->latitude,
-            'longitude' => $data->longitude,
-            'description' => $data->description,
-        ]);
-
+        $building->update($data->toArray());
         return $building;
     }
 
@@ -38,11 +26,11 @@ class BuildingService
 
     public function getAll()
     {
-        return Building::with('rooms')->get();
+        return Building::with('rooms')->get(); // optional: add latest() or paginate
     }
 
-    public function getById(int $id): Building
+    public function getById(Building $building): Building
     {
-        return Building::with('rooms')->findOrFail($id);
+        return $building->load('rooms');
     }
 }

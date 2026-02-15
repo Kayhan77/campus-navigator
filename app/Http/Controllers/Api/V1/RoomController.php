@@ -8,8 +8,8 @@ use App\Services\RoomService;
 use App\Http\Requests\Room\RoomRequest;
 use App\Http\Requests\Room\UpdateRoomRequest;
 use App\Http\Resources\Api\V1\RoomResource;
-use App\Http\Controllers\Controller;
 use App\Models\Room;
+use Illuminate\Routing\Controller;
 
 class RoomController extends Controller
 {
@@ -20,58 +20,47 @@ class RoomController extends Controller
         $this->service = $service;
     }
 
-    /**
-     * GET /rooms
-     */
+    // List all rooms
     public function index()
     {
-        $rooms = $this->service->index();
-        return RoomResource::collection($rooms);
+        return RoomResource::collection($this->service->getAll());
     }
 
-    /**
-     * GET /rooms/{id}
-     */
-    public function show(int $id)
+    // Show single room
+    public function show(Room $room)
     {
-        $room = $this->service->show($id);
-        return new RoomResource($room);
+        return new RoomResource($this->service->getById($room));
     }
 
-    /**
-     * POST /rooms
-     */
+    // Create new room
     public function store(RoomRequest $request)
     {
         $this->authorize('create', Room::class);
-        $data = new CreateRoomDTO($request->validated());
-        $room = $this->service->create($data);
+
+        $dto = CreateRoomDTO::fromRequest($request);
+        $room = $this->service->create($dto);
 
         return new RoomResource($room);
     }
 
-    /**
-     * PUT /rooms/{id}
-     */
-    public function update(UpdateRoomRequest $request, int $id)
+    // Update room
+    public function update(UpdateRoomRequest $request, Room $room)
     {
-        $this->authorize('update', Room::class);
-        $data = new UpdateRoomDTO($request->validated());
-        $room = $this->service->update($id, $data);
+        $this->authorize('update', $room);
+
+        $dto = new UpdateRoomDTO($request->validated());
+        $room = $this->service->update($room, $dto);
 
         return new RoomResource($room);
     }
 
-    /**
-     * DELETE /rooms/{id}
-     */
-    public function destroy(int $id)
+    // Delete room
+    public function destroy(Room $room)
     {
-        $this->authorize('delete', Room::class);
-        $this->service->delete($id);
+        $this->authorize('delete', $room);
 
-        return [
-            'message' => 'Room deleted successfully'
-        ];
+        $this->service->delete($room);
+
+        return ['message' => 'Room deleted successfully'];
     }
 }
