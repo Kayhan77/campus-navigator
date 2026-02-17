@@ -17,10 +17,14 @@ class RegisteredUserController extends Controller
         $this->authService = $authService;
     }
 
+    /**
+     * Register a new user.
+     */
     public function store(RegisterRequest $request)
     {
         $data = new RegisterData($request->validated());
-        $result = $this->authService->register($data);
-        return ApiResponse::success($result, 'User registered successfully', 201);
+        $user = $this->authService->register($data);
+
+        return ApiResponse::success($user, 'User registered successfully', 201);
     }
 }

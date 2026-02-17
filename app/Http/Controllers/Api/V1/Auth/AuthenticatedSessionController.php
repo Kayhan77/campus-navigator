@@ -11,26 +11,23 @@ use Illuminate\Support\Facades\Auth;
 class AuthenticatedSessionController extends Controller
 {
     /**
-     * Handle an incoming authentication request.
+     * Log in a user (session-based).
      */
     public function store(LoginRequest $request): Response
     {
         $request->authenticate();
-
         $request->session()->regenerate();
 
         return response()->noContent();
     }
 
     /**
-     * Destroy an authenticated session.
+     * Log out the authenticated user.
      */
     public function destroy(Request $request): Response
     {
         Auth::guard('web')->logout();
-
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
 
         return response()->noContent();

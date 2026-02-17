@@ -10,6 +10,8 @@ use App\Http\Controllers\Api\V1\RoomController;
 use App\Http\Controllers\Api\V1\Auth\RefreshTokenController;
 use App\Http\Controllers\Api\V1\Auth\RegisteredUserController;
 use App\Http\Controllers\Api\V1\RoomSearchController;
+use App\Http\Controllers\Api\V1\Auth\NewPasswordController;
+use App\Http\Controllers\Api\V1\Auth\PasswordResetLinkController;
 
 Route::prefix('v1')->group(function () {
   
@@ -22,6 +24,11 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
 
     Route::get('/me', [JwtAuthController::class, 'me']);
     Route::get('/user', fn ($request) => $request->user());
+
+    Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])
+        ->middleware('throttle:5,1');
+        
+    Route::post('/reset-password', [NewPasswordController::class, 'store']);
 
     Route::post('/logout', [JwtAuthController::class, 'logout']);
     Route::post('/refresh', [RefreshTokenController::class, 'refresh']);
@@ -38,6 +45,7 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
     Route::get('/events', [EventController::class, 'index']);
     Route::post('/events', [EventController::class, 'store']);
     Route::put('/events/{event}', [EventController::class, 'update']);
+    Route::delete('/events/{event}', [EventController::class, 'destroy']);
 
     Route::get('/lost-found', [LostFoundController::class, 'index']);
     Route::post('/lost-found', [LostFoundController::class, 'store']);

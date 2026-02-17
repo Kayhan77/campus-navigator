@@ -16,6 +16,9 @@ class JwtAuthController extends Controller
         $this->authService = $authService;
     }
 
+    /**
+     * Log in with JWT.
+     */
     public function login(Request $request)
     {
         $request->validate([
@@ -23,22 +26,32 @@ class JwtAuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        $data = $this->authService->login($request->email, $request->password);
+        $token = $this->authService->login($request->email, $request->password);
 
-        return ApiResponse::success($data, 'Login successful');
+        return ApiResponse::success(['token' => $token], 'Login successful');
     }
 
+    /**
+     * Refresh JWT token.
+     */
     public function refresh()
     {
-        
+        $token = $this->authService->refresh();
+        return ApiResponse::success(['token' => $token], 'Token refreshed successfully');
     }
 
+    /**
+     * Logout user (invalidate JWT).
+     */
     public function logout()
     {
         $this->authService->logout();
         return ApiResponse::success(null, 'Logged out successfully');
     }
 
+    /**
+     * Get authenticated user info.
+     */
     public function me()
     {
         $user = $this->authService->me();

@@ -8,9 +8,16 @@ use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
 use Illuminate\Support\Facades\Hash;
 use App\Exceptions\ApiException;
 use App\DTOs\Auth\RegisterData;
+use App\DTOs\Auth\ResetPasswordDTO;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Support\Str;
 
 class AuthService
 {
+    /**
+     * Register a new user and return JWT token
+     */
     public function register(RegisterData $data): array
     {
         $user = User::create([
@@ -18,15 +25,13 @@ class AuthService
             'email' => $data->email,
             'password' => Hash::make($data->password),
             'role' => $data->role,
-            ]);
+        ]);
 
-            $token = JWTAuth::fromUser($user);
+        $token = $this->createToken($user);
 
-            return [
+        return [
             'user' => $user,
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'expires_in' => JWTAuth::factory()->getTTL() * 60,
+            ...$token,
         ];
     }
 
@@ -41,13 +46,11 @@ class AuthService
             throw new ApiException('Invalid credentials', 401);
         }
 
-        $token = JWTAuth::fromUser($user);
+        $token = $this->createToken($user);
 
         return [
             'user' => $user,
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'expires_in' => JWTAuth::factory()->getTTL() * 60,
+            ...$token,
         ];
     }
 
@@ -70,7 +73,6 @@ class AuthService
         }
     }
 
-
     /**
      * Logout user (invalidate token)
      */
@@ -86,8 +88,50 @@ class AuthService
     /**
      * Get authenticated user
      */
-    public function me()
+    public function me(): ?User
     {
         return auth('api')->user();
     }
+
+    /**
+     * Create JWT token for a given user
+     */
+    protected function createToken(User $user): array
+    {
+        $token = JWTAuth::fromUser($user);
+
+        return [
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+            'expires_in' => JWTAuth::factory()->getTTL() * 60,
+        ];
+    }
+
+    // public function sendResetLink(string $email): void
+    // {
+    //     $status = Password::sendResetLink(['email' => $email]);
+
+    //     if ($status !== Password::RESET_LINK_SENT) {
+    //         throw new \Exception(__($status));
+    //     }
+    // }
+
+    // public function resetPassword(ResetPasswordDTO $data): void
+    // {
+    //     $status = Password::reset(
+    //         $data->toArray(),
+    //         function ($user) use ($data) {
+    //             $user->forceFill([
+    //                 'password' => Hash::make($data->password),
+    //                 'remember_token' => Str::random(60),
+    //             ])->save();
+
+    //             event(new PasswordReset($user));
+    //         }
+    //     );
+
+    //     if ($status !== Password::PASSWORD_RESET) {
+    //         throw new \Exception(__($status));
+    //     }
+    // }
 }
