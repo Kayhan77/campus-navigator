@@ -12,15 +12,31 @@ use App\Http\Controllers\Api\V1\Auth\RegisteredUserController;
 use App\Http\Controllers\Api\V1\RoomSearchController;
 use App\Http\Controllers\Api\V1\Auth\NewPasswordController;
 use App\Http\Controllers\Api\V1\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Api\V1\Auth\VerifyEmailController;
+use App\Http\Controllers\Api\V1\Auth\EmailVerificationNotificationController;
+use App\Http\Controllers\Api\V1\Auth\PreRegisterController;
 
 Route::prefix('v1')->group(function () {
   
     Route::post('/register', [RegisteredUserController::class, 'store']);
     Route::post('/login', [JwtAuthController::class, 'login']);
 
+    Route::post('/pre-register', [PreRegisterController::class, 'register']);
+    Route::post('/verify-email', [PreRegisterController::class, 'verify']);
+
 });
 
 Route::middleware('auth:api')->prefix('v1')->group(function () {
+
+    
+
+    Route::get('email/verify/{id}/{hash}', VerifyEmailController::class)
+        ->middleware('auth:api')
+        ->name('verification.verify');
+
+    // Resend verification email
+    Route::post('email/resend', [EmailVerificationNotificationController::class, 'store'])
+        ->middleware('auth:api');
 
     Route::get('/me', [JwtAuthController::class, 'me']);
     Route::get('/user', fn ($request) => $request->user());

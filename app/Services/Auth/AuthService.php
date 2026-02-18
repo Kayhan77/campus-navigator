@@ -8,10 +8,11 @@ use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
 use Illuminate\Support\Facades\Hash;
 use App\Exceptions\ApiException;
 use App\DTOs\Auth\RegisterData;
-use App\DTOs\Auth\ResetPasswordDTO;
-use Illuminate\Support\Facades\Password;
-use Illuminate\Auth\Events\PasswordReset;
+use App\Models\EmailVerification;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use App\DTOs\Auth\RegisterPendingDTO;
+
 
 class AuthService
 {
@@ -107,31 +108,50 @@ class AuthService
         ];
     }
 
-    // public function sendResetLink(string $email): void
-    // {
-    //     $status = Password::sendResetLink(['email' => $email]);
+    public function registerPending(RegisterPendingDTO $data): void
+    {
+        // Delete old token if exists
+        EmailVerification::where('email', $data->email)->delete();
 
-    //     if ($status !== Password::RESET_LINK_SENT) {
-    //         throw new \Exception(__($status));
-    //     }
-    // }
+        $token = Str::random(64);
+        $expires = now()->addMinutes(60);
 
-    // public function resetPassword(ResetPasswordDTO $data): void
-    // {
-    //     $status = Password::reset(
-    //         $data->toArray(),
-    //         function ($user) use ($data) {
-    //             $user->forceFill([
-    //                 'password' => Hash::make($data->password),
-    //                 'remember_token' => Str::random(60),
-    //             ])->save();
+        EmailVerification::create([
+            'email' => $data->email,
+            'token' => $token,
+            'expires_at' => $expires,
+        ]);
 
-    //             event(new PasswordReset($user));
-    //         }
-    //     );
+        // Send email
+        $link = config('app.frontend_url') . "/verify-email?token={$token}&email={$data->email}";
 
-    //     if ($status !== Password::PASSWORD_RESET) {
-    //         throw new \Exception(__($status));
-    //     }
-    // }
+        Mail::send([], [], function ($message) use ($data, $link) {
+            $message->to($data->email)
+                ->subject('Verify Your Email')
+                ->setBody("Hello {$data->name}, click here to verify your email: {$link}", 'text/html');
+        });
+    }
+
+    public function verifyEmail(string $token, string $email): User
+    {
+        $record = EmailVerification::where('email', $email)
+            ->where('token', $token)
+            ->where('expires_at', '>=', now())
+            ->first();
+
+        if (!$record) {
+            throw new \Exception('Invalid or expired verification token');
+        }
+
+        // Create user
+        $user = User::create([
+            'name' => $record->email, // optionally store name elsewhere
+            'email' => $record->email,
+            'password' => Hash::make('defaultpassword'), // OR store pending password encrypted
+        ]);
+
+        $record->delete(); // remove token
+
+        return $user;
+    }
 }

@@ -7,6 +7,7 @@ use App\Http\Requests\Auth\RegisterRequest;
 use App\Services\Auth\AuthService;
 use App\DTOs\Auth\RegisterData;
 use App\Helpers\ApiResponse;
+use App\Notifications\VerifyEmailNotification;
 
 class RegisteredUserController extends Controller
 {
@@ -24,6 +25,8 @@ class RegisteredUserController extends Controller
     {
         $data = new RegisterData($request->validated());
         $user = $this->authService->register($data);
+
+        $user['user']->notify(new VerifyEmailNotification());
 
         return ApiResponse::success($user, 'User registered successfully', 201);
     }

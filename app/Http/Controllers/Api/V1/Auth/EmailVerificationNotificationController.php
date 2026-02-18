@@ -4,13 +4,13 @@ namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 
 class EmailVerificationNotificationController extends Controller
 {
     /**
-     * Send a new email verification notification.
+     * Resend a new email verification notification.
      */
     public function store(Request $request): JsonResponse|RedirectResponse
     {
@@ -20,8 +20,6 @@ class EmailVerificationNotificationController extends Controller
 
         $request->user()->sendEmailVerificationNotification();
 
-        return response()->json([
-            'status' => 'verification-link-sent',
-        ]);
+        return response()->json(['status' => 'verification-link-sent']);
     }
 }
