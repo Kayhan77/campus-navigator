@@ -15,12 +15,14 @@ class PendingRegistration extends Model
         'email',
         'password',
         'token',
+        'verification_code',
         'expires_at',
     ];
 
     protected $hidden = [
         'password',
         'token',
+        'verification_code',
     ];
 
     protected $casts = [

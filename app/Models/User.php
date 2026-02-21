@@ -15,7 +15,9 @@ class User extends Authenticatable implements JWTSubject
         'name',
         'email',
         'password',
-        'role', // student/admin
+        'role',
+        'verification_code',
+        'is_verified',
     ];
 
     protected $hidden = [
@@ -26,6 +28,7 @@ class User extends Authenticatable implements JWTSubject
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'is_verified' => 'boolean',
     ];
 
     public function lostItems()
@@ -38,7 +41,7 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(Event::class, 'created_by');
     }
 
-     public function getJWTIdentifier()
+    public function getJWTIdentifier()
     {
         return $this->getKey();
     }
@@ -50,7 +53,7 @@ class User extends Authenticatable implements JWTSubject
 
     public function isAdmin(): bool
     {
-    return $this->role === 'admin';
+        return $this->role === 'admin';
     }
 
     public function isStudent(): bool

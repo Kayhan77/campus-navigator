@@ -5,37 +5,44 @@ namespace App\Services\Auth;
 use App\Models\PendingRegistration;
 use App\Models\User;
 use App\DTOs\Auth\RegisterPendingDTO;
+use App\DTOs\Auth\VerifyCodeDTO;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use App\Notifications\VerifyEmailNotification;
-
 
 class PreRegisterService
 {
     public function preRegister(RegisterPendingDTO $dto): PendingRegistration
     {
-        $pending =   PendingRegistration::create([
-            'name'       => $dto->name,
-            'email'      => $dto->email,
-            'password'   => Hash::make($dto->password),
-            'token'      => Str::random(64),
-            'expires_at' => now()->addHours(24),
+        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+        $pending = PendingRegistration::create([
+            'name'              => $dto->name,
+            'email'             => $dto->email,
+            'password'          => Hash::make($dto->password),
+            'token'             => Str::random(64),
+            'verification_code' => $code,
+            'expires_at'        => now()->addHours(24),
         ]);
-        $pending->notify(new VerifyEmailNotification($pending->token));
+
+        $pending->notify(new VerifyEmailNotification($code));
+
         return $pending;
     }
 
-    public function verify(string $token): User
-    {   
-        $pending = PendingRegistration::where('token', $token)->first();
+    public function verify(VerifyCodeDTO $dto): User
+    {
+        $pending = PendingRegistration::where('email', $dto->email)
+            ->where('verification_code', $dto->code)
+            ->first();
 
         if (!$pending) {
-            throw new \Exception('Invalid verification token.');
+            throw new \InvalidArgumentException('Invalid verification code.');
         }
 
         if ($pending->expires_at->isPast()) {
             $pending->delete();
-            throw new \Exception('Verification token expired.');
+            throw new \InvalidArgumentException('Verification code has expired.');
         }
 
         $user = User::create([
@@ -48,5 +55,4 @@ class PreRegisterService
 
         return $user;
     }
-
 }

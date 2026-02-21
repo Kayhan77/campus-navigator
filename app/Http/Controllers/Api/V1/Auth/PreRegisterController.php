@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\PreRegisterRequest;
+use App\Http\Requests\Auth\VerifyCodeRequest;
 use App\Http\Resources\Auth\PendingRegistrationResource;
+use App\Http\Resources\Auth\UserResource;
 use App\Services\Auth\PreRegisterService;
 use App\DTOs\Auth\RegisterPendingDTO;
-use Illuminate\Http\Request;
+use App\DTOs\Auth\VerifyCodeDTO;
 
 class PreRegisterController extends Controller
 {
@@ -22,22 +24,26 @@ class PreRegisterController extends Controller
         $pending = $this->service->preRegister($dto);
 
         return response()->json([
-            'message' => 'Pre-registration successful. Please verify your email.',
+            'message' => 'Pre-registration successful. Check your email for the verification code.',
             'data' => new PendingRegistrationResource($pending),
         ]);
     }
 
-    public function verify(Request $request)
+    public function verify(VerifyCodeRequest $request)
     {
-        $request->validate([
-            'token' => 'required|string'
-        ]);
+        try {
+            $dto = VerifyCodeDTO::fromArray($request->validated());
 
-        $user = $this->service->verify($request->token);
+            $user = $this->service->verify($dto);
 
-        return response()->json([
-            'message' => 'Email verified successfully.',
-            'user' => $user
-        ]);
+            return response()->json([
+                'message' => 'Email verified successfully.',
+                'user'    => new UserResource($user),
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 422);
+        }
     }
 }

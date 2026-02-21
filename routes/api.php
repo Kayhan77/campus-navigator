@@ -22,7 +22,7 @@ Route::prefix('v1')->group(function () {
     Route::post('/login', [JwtAuthController::class, 'login']);
 
     Route::post('/pre-register', [PreRegisterController::class, 'register']);
-    Route::post('/verify-email', [PreRegisterController::class, 'verify']);
+    Route::post('/verify-code', [PreRegisterController::class, 'verify']);
 
 });
 
