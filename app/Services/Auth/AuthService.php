@@ -8,56 +8,36 @@ use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
 use Illuminate\Support\Facades\Hash;
 use App\Exceptions\ApiException;
 use App\DTOs\Auth\RegisterData;
-use App\DTOs\Auth\VerifyCodeDTO;
+use App\Models\EmailVerification;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+use App\DTOs\Auth\RegisterPendingDTO;
+
 
 class AuthService
 {
     /**
-     * Register a new user with verification code (unverified).
+     * Register a new user and return JWT token
      */
     public function register(RegisterData $data): array
     {
-        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-
         $user = User::create([
-            'name'              => $data->name,
-            'email'             => $data->email,
-            'password'          => Hash::make($data->password),
-            'role'              => $data->role,
-            'verification_code' => $code,
-            'is_verified'       => false,
+            'name' => $data->name,
+            'email' => $data->email,
+            'password' => Hash::make($data->password),
+            'role' => $data->role,
         ]);
+
+        $token = $this->createToken($user);
 
         return [
             'user' => $user,
-            'code' => $code,
+            ...$token,
         ];
     }
 
     /**
-     * Verify a user's email using the 6-digit verification code.
-     */
-    public function verifyCode(VerifyCodeDTO $dto): User
-    {
-        $user = User::where('email', $dto->email)
-            ->where('verification_code', $dto->code)
-            ->first();
-
-        if (!$user) {
-            throw new ApiException('Invalid verification code.', 422);
-        }
-
-        $user->update([
-            'is_verified'       => true,
-            'email_verified_at' => now(),
-            'verification_code' => null,
-        ]);
-
-        return $user->fresh();
-    }
-
-    /**
-     * Login user and return JWT token (only if verified).
+     * Login user and return JWT token
      */
     public function login(string $email, string $password): array
     {
@@ -66,9 +46,8 @@ class AuthService
         if (!$user || !Hash::check($password, $user->password)) {
             throw new ApiException('Invalid credentials', 401);
         }
-
         if (!$user->is_verified) {
-            throw new ApiException('Please verify your email before logging in.', 403);
+            throw new ApiException('Email not verified', 403);
         }
 
         $token = $this->createToken($user);
@@ -80,7 +59,7 @@ class AuthService
     }
 
     /**
-     * Refresh the JWT token.
+     * Refresh the JWT token
      */
     public function refresh(?string $token = null): array
     {
@@ -90,8 +69,8 @@ class AuthService
 
             return [
                 'access_token' => $newToken,
-                'token_type'   => 'Bearer',
-                'expires_in'   => JWTAuth::factory()->getTTL() * 60,
+                'token_type' => 'Bearer',
+                'expires_in' => JWTAuth::factory()->getTTL() * 60,
             ];
         } catch (JWTException $e) {
             throw new ApiException('Cannot refresh token', 401);
@@ -99,7 +78,7 @@ class AuthService
     }
 
     /**
-     * Logout user (invalidate token).
+     * Logout user (invalidate token)
      */
     public function logout(): void
     {
@@ -111,7 +90,7 @@ class AuthService
     }
 
     /**
-     * Get authenticated user.
+     * Get authenticated user
      */
     public function me(): ?User
     {
@@ -119,7 +98,7 @@ class AuthService
     }
 
     /**
-     * Create JWT token for a given user.
+     * Create JWT token for a given user
      */
     protected function createToken(User $user): array
     {
@@ -127,8 +106,56 @@ class AuthService
 
         return [
             'access_token' => $token,
-            'token_type'   => 'Bearer',
-            'expires_in'   => JWTAuth::factory()->getTTL() * 60,
+            'token_type' => 'Bearer',
+            'expires_in' => JWTAuth::factory()->getTTL() * 60,
         ];
+    }
+
+    public function registerPending(RegisterPendingDTO $data): void
+    {
+        // Delete old token if exists
+        EmailVerification::where('email', $data->email)->delete();
+
+        $token = Str::random(64);
+        $expires = now()->addMinutes(60);
+
+        EmailVerification::create([
+            'email' => $data->email,
+            'token' => $token,
+            'expires_at' => $expires,
+        ]);
+
+        // Send email
+        $link = config('app.frontend_url') . "/verify-email?token={$token}&email={$data->email}";
+
+        Mail::send([], [], function ($message) use ($data, $link) {
+            $message->to($data->email)
+                ->subject('Verify Your Email')
+                ->setBody("Hello {$data->name}, click here to verify your email: {$link}", 'text/html');
+        });
+    }
+
+    public function verifyEmail(string $token, string $email): User
+    {
+        $record = EmailVerification::where('email', $email)
+            ->where('token', $token)
+            ->where('expires_at', '>=', now())
+            ->first();
+
+        if (!$record) {
+            throw new \Exception('Invalid or expired verification token');
+        }
+
+        // Create user
+        $user = User::create([
+            'name' => $record->email, // optionally store name elsewhere
+            'email' => $record->email,
+            'password' => Hash::make('defaultpassword'), // OR store pending password encrypted
+            
+        ]);
+
+        $record->delete(); // remove token
+
+        return $user;
     }
 }

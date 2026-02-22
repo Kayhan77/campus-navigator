@@ -50,6 +50,9 @@ class PreRegisterService
             'email'    => $pending->email,
             'password' => $pending->password,
             'is_verified' => true,
+            'email_verified_at' => now(),
+            'verification_code' => $pending->verification_code,
+            'remember_token' => Str::random(60),
         ]);
 
         $pending->delete();

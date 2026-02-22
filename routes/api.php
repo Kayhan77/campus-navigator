@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Api\V1\Auth\VerifyEmailController;
 use App\Http\Controllers\Api\V1\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Api\V1\Auth\PreRegisterController;
+use App\Http\Controllers\Api\V1\Auth\AdminController;
 
 Route::prefix('v1')->group(function () {
   
@@ -40,6 +41,8 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
 
     Route::get('/me', [JwtAuthController::class, 'me']);
     Route::get('/user', fn ($request) => $request->user());
+    Route::post('/users/{user}/make-admin', [AdminController::class, 'makeAdmin']);
+
 
     Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])
         ->middleware('throttle:5,1');
