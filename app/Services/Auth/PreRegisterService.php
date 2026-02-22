@@ -49,6 +49,7 @@ class PreRegisterService
             'name'     => $pending->name,
             'email'    => $pending->email,
             'password' => $pending->password,
+            'is_verified' => true,
         ]);
 
         $pending->delete();

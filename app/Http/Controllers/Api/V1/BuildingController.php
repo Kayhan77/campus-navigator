@@ -9,7 +9,7 @@ use App\Http\Requests\Building\BuildingRequest;
 use App\Http\Requests\Building\UpdateBuildingRequest;
 use App\Http\Resources\Api\V1\BuildingResource;
 use App\Models\Building;
-use Illuminate\Routing\Controller;
+use App\Http\Controllers\Controller;
 
 class BuildingController extends Controller
 {

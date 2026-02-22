@@ -9,8 +9,7 @@ use App\Http\Requests\LostItem\LostItemRequest;
 use App\Http\Requests\LostItem\UpdateLostItemRequest;
 use App\Http\Resources\Api\V1\LostItemResource;
 use App\Models\LostItem;
-use Illuminate\Routing\Controller;
-
+use App\Http\Controllers\Controller;
 class LostFoundController extends Controller
 {
     protected LostItemService $service;

@@ -11,7 +11,9 @@ class RoomService
     // List all rooms
     public function getAll()
     {
-        return Room::with('building')->get();
+        return Room::with('building')
+        ->withCount('events')
+        ->get();
     }
 
     // Get a single room by model binding

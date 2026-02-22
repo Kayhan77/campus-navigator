@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AcademicSchedule;
 use App\DTOs\AcademicSchedule\CreateAcademicScheduleDTO;
 use App\DTOs\AcademicSchedule\UpdateAcademicScheduleDTO;
+use Illuminate\Support\Facades\Cache;
 
 class AcademicScheduleService
 {
@@ -27,7 +28,10 @@ class AcademicScheduleService
     public function getAll()
     {
         // Professional: use latest() or paginate if API may return many schedules
-        return AcademicSchedule::with('room.building')->latest()->get();
+        return Cache::remember('academic_schedules', 60, function () {
+            return AcademicSchedule::with('room.building')->latest()->get();
+        });
+        
     }
 
     public function getById(AcademicSchedule $schedule): AcademicSchedule

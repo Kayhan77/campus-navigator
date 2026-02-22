@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable implements JWTSubject
+class User extends Authenticatable implements JWTSubject, MustVerifyEmail
 {
     use HasFactory, Notifiable;
 
@@ -15,9 +16,7 @@ class User extends Authenticatable implements JWTSubject
         'name',
         'email',
         'password',
-        'role',
-        'verification_code',
-        'is_verified',
+        'role', // student/admin
     ];
 
     protected $hidden = [
@@ -28,7 +27,6 @@ class User extends Authenticatable implements JWTSubject
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
-        'is_verified' => 'boolean',
     ];
 
     public function lostItems()
@@ -41,7 +39,7 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(Event::class, 'created_by');
     }
 
-    public function getJWTIdentifier()
+     public function getJWTIdentifier()
     {
         return $this->getKey();
     }
@@ -53,11 +51,12 @@ class User extends Authenticatable implements JWTSubject
 
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+    return $this->role === 'admin';
     }
 
     public function isStudent(): bool
     {
         return $this->role === 'student';
     }
+    
 }

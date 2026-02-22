@@ -19,7 +19,7 @@ class RoomResource extends JsonResource
                     'name' => $this->building->name,
                 ];
             }),
-            'events_count' => $this->events()->count(),
+            'events_count' => $this->events_count,
             'created_at' => $this->created_at?->toDateTimeString(),
             'updated_at' => $this->updated_at?->toDateTimeString(),
         ];

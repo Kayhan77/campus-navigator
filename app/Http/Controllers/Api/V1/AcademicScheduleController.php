@@ -9,7 +9,7 @@ use App\Http\Requests\AcademicSchedule\AcademicScheduleRequest;
 use App\Http\Requests\AcademicSchedule\UpdateAcademicScheduleRequest;
 use App\Http\Resources\Api\V1\AcademicScheduleResource;
 use App\Models\AcademicSchedule;
-use Illuminate\Routing\Controller;
+use App\Http\Controllers\Controller;
 
 class AcademicScheduleController extends Controller
 {

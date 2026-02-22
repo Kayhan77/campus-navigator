@@ -9,7 +9,7 @@ use App\Http\Requests\Room\RoomRequest;
 use App\Http\Requests\Room\UpdateRoomRequest;
 use App\Http\Resources\Api\V1\RoomResource;
 use App\Models\Room;
-use Illuminate\Routing\Controller;
+use App\Http\Controllers\Controller;
 
 class RoomController extends Controller
 {

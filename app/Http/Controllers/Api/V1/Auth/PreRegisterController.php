@@ -44,6 +44,7 @@ class PreRegisterController extends Controller
             return response()->json([
                 'message' => $e->getMessage(),
             ], 422);
+            
         }
     }
 }
