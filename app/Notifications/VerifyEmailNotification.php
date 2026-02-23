@@ -29,7 +29,7 @@ class VerifyEmailNotification extends Notification implements ShouldQueue
             ->line('Thank you for registering.')
             ->line('Your verification code is:')
             ->line("**{$this->code}**")
-            ->line('This code will expire in 15 minutes.')
+            ->line('This code will expire in 10 minutes.')
             ->line('If you did not create an account, no further action is required.')
             ->salutation('Regards, ' . Config::get('app.name'));
     }

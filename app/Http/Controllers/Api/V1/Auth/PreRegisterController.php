@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\DTOs\Auth\RegisterPendingDTO;
 use App\DTOs\Auth\VerifyCodeDTO;
+use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\PreRegisterRequest;
 use App\Http\Requests\Auth\ResendOtpRequest;
@@ -23,49 +24,37 @@ class PreRegisterController extends Controller
         $dto     = RegisterPendingDTO::fromArray($request->validated());
         $pending = $this->service->preRegister($dto);
 
-        return response()->json([
-            'message' => 'Verification code sent to your email.',
-            'data'    => [
-                'email' => $pending->email,
-                'name'  => $pending->name,
-            ],
-        ]);
+        return ApiResponse::success(
+            ['email' => $pending->email, 'name' => $pending->name],
+            'Verification code sent to your email.'
+        );
     }
 
     public function verify(VerifyCodeRequest $request)
     {
-        try {
-            $dto  = VerifyCodeDTO::fromArray($request->validated());
-            $user = $this->service->verify($dto);
+        $dto  = VerifyCodeDTO::fromArray($request->validated());
+        $user = $this->service->verify($dto);
 
-            $token = JWTAuth::fromUser($user);
+        $token = JWTAuth::fromUser($user);
 
-            return response()->json([
-                'message'      => 'Email verified successfully.',
+        return ApiResponse::success(
+            [
                 'user'         => new UserResource($user),
                 'access_token' => $token,
                 'token_type'   => 'Bearer',
                 'expires_in'   => JWTAuth::factory()->getTTL() * 60,
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+            ],
+            'Email verified successfully.'
+        );
     }
 
     public function resend(ResendOtpRequest $request)
     {
-        try {
-            $pending = $this->service->resendOtp($request->validated('email'));
+        $pending = $this->service->resendOtp($request->validated('email'));
 
-            return response()->json([
-                'message' => 'Verification code resent successfully.',
-                'data'    => [
-                    'email' => $pending->email,
-                    'name'  => $pending->name,
-                ],
-            ]);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        return ApiResponse::success(
+            ['email' => $pending->email, 'name' => $pending->name],
+            'Verification code resent successfully.'
+        );
     }
 }

@@ -8,8 +8,8 @@ use App\Http\Controllers\Api\V1\Admin\AdminEventController;
 use App\Http\Controllers\Api\V1\Admin\AdminRoomController;
 use App\Http\Controllers\Api\V1\Admin\AdminUserController;
 use App\Http\Controllers\Api\V1\Auth\JwtAuthController;
-use App\Http\Controllers\Api\V1\Auth\NewPasswordController;
-use App\Http\Controllers\Api\V1\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Api\V1\Auth\NewPasswordOtpController;
+use App\Http\Controllers\Api\V1\Auth\PasswordResetOtpController;
 use App\Http\Controllers\Api\V1\Auth\PreRegisterController;
 use App\Http\Controllers\Api\V1\Auth\RefreshTokenController;
 use App\Http\Controllers\Api\V1\BuildingController;
@@ -26,6 +26,10 @@ Route::prefix('v1')->group(function () {
     Route::post('/verify-otp',   [PreRegisterController::class, 'verify']);
     Route::post('/resend-otp',   [PreRegisterController::class, 'resend'])->middleware('throttle:5,1');
     Route::post('/login',        [JwtAuthController::class, 'login']);
+    Route::post('/forgot-password', [PasswordResetOtpController::class, 'send'])
+        ->middleware('throttle:5,1');
+    Route::post('/reset-password', [NewPasswordOtpController::class, 'reset']);
+
 
     Route::get('/buildings',         [BuildingController::class, 'index']);
     Route::get('/buildings/{building}', [BuildingController::class, 'show']);
@@ -48,10 +52,7 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
     Route::post('/logout',  [JwtAuthController::class, 'logout']);
     Route::post('/refresh', [RefreshTokenController::class, 'refresh']);
 
-    Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])
-        ->middleware('throttle:5,1');
-    Route::post('/reset-password', [NewPasswordController::class, 'store']);
-
+    
     Route::get('/rooms/search', [RoomSearchController::class, 'index']);
 
     Route::get('/lost-found',  [LostFoundController::class, 'index']);
@@ -71,12 +72,14 @@ Route::middleware(['auth:api', 'admin'])->prefix('v1/admin')->group(function () 
 
     // Event management
     Route::get('/events',              [AdminEventController::class, 'index']);
+    Route::get('/events/{event}',       [AdminEventController::class, 'show']);
     Route::post('/events',             [AdminEventController::class, 'store']);
     Route::put('/events/{event}',      [AdminEventController::class, 'update']);
     Route::delete('/events/{event}',   [AdminEventController::class, 'destroy']);
 
     // Building management
     Route::get('/buildings',               [AdminBuildingController::class, 'index']);
+    Route::get('/buildings/{building}',    [AdminBuildingController::class, 'show']);
     Route::post('/buildings',              [AdminBuildingController::class, 'store']);
     Route::put('/buildings/{building}',    [AdminBuildingController::class, 'update']);
     Route::delete('/buildings/{building}', [AdminBuildingController::class, 'destroy']);
