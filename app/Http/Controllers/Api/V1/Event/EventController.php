@@ -31,28 +31,28 @@ class EventController extends Controller
         return new EventResource($event);
     }
 
-    public function store(EventRequest $request)
-    {
-        $this->authorize('create', Event::class);
-        $data = new CreateEventDTO($request->validated());
-        $event = $this->service->create($data, $request->user()->id);
-        return new EventResource($event);
-    }
+    // public function store(EventRequest $request)
+    // {
+    //     $this->authorize('create', Event::class);
+    //     $data = new CreateEventDTO($request->validated());
+    //     $event = $this->service->create($data, $request->user()->id);
+    //     return new EventResource($event);
+    // }
 
-    public function update(UpdateEventRequest $request, Event $event)
-    {
-        $this->authorize('update', $event);
-        $data = new UpdateEventDTO($request->validated());
-        $event = $this->service->update($event, $data);
-        return new EventResource($event);
-    }
+    // public function update(UpdateEventRequest $request, Event $event)
+    // {
+    //     $this->authorize('update', $event);
+    //     $data = new UpdateEventDTO($request->validated());
+    //     $event = $this->service->update($event, $data);
+    //     return new EventResource($event);
+    // }
 
-    public function destroy(Event $event)
-    {
-        $this->authorize('delete', $event);
-        $this->service->delete($event);
-        return [
-            'message' => 'Event deleted successfully'
-        ];
-    }
+    // public function destroy(Event $event)
+    // {
+    //     $this->authorize('delete', $event);
+    //     $this->service->delete($event);
+    //     return [
+    //         'message' => 'Event deleted successfully'
+    //     ];
+    // }
 }

@@ -17,6 +17,7 @@ class PendingRegistration extends Model
         'token',
         'verification_code',
         'expires_at',
+        'last_sent_at',
     ];
 
     protected $hidden = [
@@ -26,7 +27,8 @@ class PendingRegistration extends Model
     ];
 
     protected $casts = [
-        'expires_at' => 'datetime',
+        'expires_at'   => 'datetime',
+        'last_sent_at' => 'datetime',
     ];
 
     public function routeNotificationForMail()

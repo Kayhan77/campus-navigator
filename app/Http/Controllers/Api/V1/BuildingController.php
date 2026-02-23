@@ -33,36 +33,36 @@ class BuildingController extends Controller
     }
 
     // Create building
-    public function store(BuildingRequest $request)
-    {
-        $this->authorize('create', Building::class);
+    // public function store(BuildingRequest $request)
+    // {
+    //     $this->authorize('create', Building::class);
 
-        $dto = CreateBuildingDTO::fromRequest($request);
+    //     $dto = CreateBuildingDTO::fromRequest($request);
 
-        $building = $this->service->create($dto);
+    //     $building = $this->service->create($dto);
 
-        return new BuildingResource($building);
-    }
+    //     return new BuildingResource($building);
+    // }
 
-    // Update building
-    public function update(UpdateBuildingRequest $request, Building $building)
-    {
-        $this->authorize('update', $building);
+    // // Update building
+    // public function update(UpdateBuildingRequest $request, Building $building)
+    // {
+    //     $this->authorize('update', $building);
 
-        $dto = new UpdateBuildingDTO($request->validated());
+    //     $dto = new UpdateBuildingDTO($request->validated());
 
-        $building = $this->service->update($building, $dto);
+    //     $building = $this->service->update($building, $dto);
 
-        return new BuildingResource($building);
-    }
+    //     return new BuildingResource($building);
+    // }
 
-    // Delete building
-    public function destroy(Building $building)
-    {
-        $this->authorize('delete', $building);
+    // // Delete building
+    // public function destroy(Building $building)
+    // {
+    //     $this->authorize('delete', $building);
 
-        $this->service->delete($building);
+    //     $this->service->delete($building);
 
-        return ['message' => 'Building deleted successfully'];
-    }
+    //     return ['message' => 'Building deleted successfully'];
+    // }
 }

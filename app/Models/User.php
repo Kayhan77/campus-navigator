@@ -7,13 +7,13 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable implements JWTSubject { 
     use HasFactory, Notifiable; 
-    protected $fillable = [ 
-        'name', 
-        'email', 
-        'password', 
-        'role', 
-        'verification_code', 
-        'is_verified', 
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'role',
+        'is_verified',
+        'email_verified_at',
     ]; 
 
     protected $hidden = [ 
@@ -42,11 +42,18 @@ class User extends Authenticatable implements JWTSubject {
         return []; 
     } 
     
-    public function isAdmin(): bool { 
-        return $this->role === 'admin'; 
-    } 
-    
-    public function isStudent(): bool { 
-        return $this->role === 'student'; 
-    } 
+    public function isAdmin(): bool
+    {
+        return in_array($this->role, ['admin', 'super_admin']);
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'super_admin';
+    }
+
+    public function isUser(): bool
+    {
+        return $this->role === 'user';
+    }
 }
