@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\Auth\PasswordResetOtpController;
 use App\Http\Controllers\Api\V1\Auth\PreRegisterController;
 use App\Http\Controllers\Api\V1\Auth\RefreshTokenController;
 use App\Http\Controllers\Api\V1\BuildingController;
+use App\Http\Controllers\Api\V1\DeviceTokenController;
 use App\Http\Controllers\Api\V1\Event\EventController;
 use App\Http\Controllers\Api\V1\LostFoundController;
 use App\Http\Controllers\Api\V1\RoomController;
@@ -57,6 +58,12 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
 
     Route::get('/lost-found',  [LostFoundController::class, 'index']);
     Route::post('/lost-found', [LostFoundController::class, 'store']);
+
+    // Device token registration for push notifications
+    Route::post('/device-tokens', [DeviceTokenController::class, 'store'])
+        ->middleware('throttle:10,1');
+    Route::delete('/device-tokens', [DeviceTokenController::class, 'destroy'])
+        ->middleware('throttle:10,1');
 
 });
 

@@ -12,8 +12,16 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Run event notifications hourly
+        // Legacy notification job (kept for backwards compatibility)
         $schedule->job(new \App\Jobs\SendEventNotificationJob)->hourly();
+
+        // FCM push reminders: runs every 15 minutes to catch upcoming events
+        // Production cron: * * * * * php /path/to/artisan schedule:run >> /dev/null 2>&1
+        $schedule->command('app:send-event-reminders')
+            ->everyFifteenMinutes()
+            ->withoutOverlapping()     // prevents concurrent runs
+            ->runInBackground()        // non-blocking
+            ->appendOutputTo(storage_path('logs/event-reminders.log'));
     }
 
     /**

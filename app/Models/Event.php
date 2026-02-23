@@ -12,7 +12,14 @@ class Event extends Model
         'location',
         'start_time',
         'end_time',
+        'reminder_sent_at',
         'created_by'
+    ];
+
+    protected $casts = [
+        'start_time'       => 'datetime',
+        'end_time'         => 'datetime',
+        'reminder_sent_at' => 'datetime',
     ];
 
     public function creator()

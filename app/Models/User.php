@@ -3,7 +3,8 @@
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject; 
 use Illuminate\Database\Eloquent\Factories\HasFactory; 
 use Illuminate\Foundation\Auth\User as Authenticatable; 
-use Illuminate\Notifications\Notifiable; 
+use Illuminate\Notifications\Notifiable;
+use App\Models\DeviceToken; 
 
 class User extends Authenticatable implements JWTSubject { 
     use HasFactory, Notifiable; 
@@ -32,6 +33,14 @@ class User extends Authenticatable implements JWTSubject {
     } 
     public function events() { 
         return $this->hasMany(Event::class, 'created_by'); 
+    }
+
+    /**
+     * Device tokens registered for push notifications.
+     */
+    public function deviceTokens()
+    {
+        return $this->hasMany(DeviceToken::class);
     } 
         
     public function getJWTIdentifier() { 
