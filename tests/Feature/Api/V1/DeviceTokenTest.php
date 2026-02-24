@@ -27,7 +27,7 @@ class DeviceTokenTest extends TestCase
         [$user, $headers] = $this->actingAsUser();
 
         $response = $this->postJson('/api/v1/device-tokens', [
-            'token'    => 'fcm-token-abc123',
+            'token'    => 'fcm-token-abcdefghijk123456789',
             'platform' => 'android',
         ], $headers);
 
@@ -37,7 +37,7 @@ class DeviceTokenTest extends TestCase
 
         $this->assertDatabaseHas('device_tokens', [
             'user_id'  => $user->id,
-            'token'    => 'fcm-token-abc123',
+            'token'    => 'fcm-token-abcdefghijk123456789',
             'platform' => 'android',
         ]);
     }
@@ -49,12 +49,12 @@ class DeviceTokenTest extends TestCase
 
         DeviceToken::create([
             'user_id'  => $user->id,
-            'token'    => 'existing-fcm-token',
+            'token'    => 'existing-fcm-token-long-enough',
             'platform' => 'ios',
         ]);
 
         $response = $this->postJson('/api/v1/device-tokens', [
-            'token'    => 'existing-fcm-token',
+            'token'    => 'existing-fcm-token-long-enough',
             'platform' => 'android',
         ], $headers);
 
@@ -62,7 +62,7 @@ class DeviceTokenTest extends TestCase
             ->assertJsonPath('message', 'Device token updated successfully.');
 
         // Still only one record for this token
-        $this->assertCount(1, DeviceToken::where('token', 'existing-fcm-token')->get());
+        $this->assertCount(1, DeviceToken::where('token', 'existing-fcm-token-long-enough')->get());
     }
 
     #[Test]
@@ -70,7 +70,7 @@ class DeviceTokenTest extends TestCase
     {
         [, $headers] = $this->actingAsUser();
 
-        $response = $this->postJson('/api/v1/device-tokens', [], $headers);
+        $response = $this->postJson('/api/v1/device-tokens', ['platform' => 'android'], $headers);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['token']);
@@ -82,7 +82,7 @@ class DeviceTokenTest extends TestCase
         [, $headers] = $this->actingAsUser();
 
         $response = $this->postJson('/api/v1/device-tokens', [
-            'token'    => 'some-token',
+            'token'    => 'some-long-enough-test-token-abc',
             'platform' => 'windows',
         ], $headers);
 
@@ -94,7 +94,8 @@ class DeviceTokenTest extends TestCase
     public function unauthenticated_user_cannot_register_token(): void
     {
         $response = $this->postJson('/api/v1/device-tokens', [
-            'token' => 'some-token',
+            'token'    => 'some-long-enough-test-token-abc',
+            'platform' => 'android',
         ]);
 
         $response->assertStatus(401);
@@ -107,16 +108,17 @@ class DeviceTokenTest extends TestCase
 
         DeviceToken::create([
             'user_id' => $user->id,
-            'token'   => 'token-to-delete',
+            'token'   => 'token-to-delete-long-enough-xx',
+            'platform' => 'android',
         ]);
 
         $response = $this->deleteJson('/api/v1/device-tokens', [
-            'token' => 'token-to-delete',
+            'token' => 'token-to-delete-long-enough-xx',
         ], $headers);
 
         $response->assertStatus(200)
             ->assertJsonPath('message', 'Device token removed successfully.');
 
-        $this->assertDatabaseMissing('device_tokens', ['token' => 'token-to-delete']);
+        $this->assertDatabaseMissing('device_tokens', ['token' => 'token-to-delete-long-enough-xx']);
     }
 }

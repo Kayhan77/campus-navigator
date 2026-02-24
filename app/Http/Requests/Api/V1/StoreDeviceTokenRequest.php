@@ -15,8 +15,9 @@ class StoreDeviceTokenRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'token'    => ['required', 'string', 'max:255'],
-            'platform' => ['nullable', 'string', 'in:android,ios,web'],
+            // FCM tokens are typically 152-163 chars; enforce a sane range.
+            'token'    => ['required', 'string', 'min:20', 'max:512'],
+            'platform' => ['required', 'string', 'in:android,ios,web'],
         ];
     }
 
@@ -24,7 +25,9 @@ class StoreDeviceTokenRequest extends FormRequest
     {
         return [
             'token.required'  => 'A device token is required.',
-            'token.max'       => 'Device token must not exceed 255 characters.',
+            'token.min'       => 'Device token appears too short to be a valid FCM token.',
+            'token.max'       => 'Device token must not exceed 512 characters.',
+            'platform.required' => 'Platform is required (android, ios, or web).',
             'platform.in'     => 'Platform must be one of: android, ios, web.',
         ];
     }

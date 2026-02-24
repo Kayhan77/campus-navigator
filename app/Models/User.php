@@ -15,6 +15,7 @@ class User extends Authenticatable implements JWTSubject {
         'role',
         'is_verified',
         'email_verified_at',
+        'notification_preferences',
     ]; 
 
     protected $hidden = [ 
@@ -41,7 +42,33 @@ class User extends Authenticatable implements JWTSubject {
     public function deviceTokens()
     {
         return $this->hasMany(DeviceToken::class);
-    } 
+    }
+
+    /**
+     * Push notification preferences stored as a JSON object.
+     *
+     * Returns an array with defaults merged in so callers never need
+     * to null-check individual keys:
+     *   'enabled'   => true
+     *   'reminders' => ['24h', '1h', '10min']
+     *   'locale'    => 'en'
+     */
+    public function getNotificationPreferencesAttribute(?string $value): array
+    {
+        $defaults = [
+            'enabled'   => true,
+            'reminders' => ['24h', '1h', '10min'],
+            'locale'    => 'en',
+        ];
+
+        if ($value === null) {
+            return $defaults;
+        }
+
+        $stored = json_decode($value, true) ?? [];
+
+        return array_merge($defaults, $stored);
+    }
         
     public function getJWTIdentifier() { 
             return $this->getKey(); 

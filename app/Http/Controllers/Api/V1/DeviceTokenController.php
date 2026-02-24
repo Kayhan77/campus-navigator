@@ -6,6 +6,7 @@ use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreDeviceTokenRequest;
 use App\Models\DeviceToken;
+use Illuminate\Http\Request;
 
 class DeviceTokenController extends Controller
 {
@@ -38,6 +39,8 @@ class DeviceTokenController extends Controller
                 'id'           => $deviceToken->id,
                 'platform'     => $deviceToken->platform,
                 'last_used_at' => $deviceToken->last_used_at,
+                // Token is intentionally omitted from responses:
+                // it is a secret credential and the client already holds it.
             ],
             $message,
             $statusCode
@@ -49,9 +52,13 @@ class DeviceTokenController extends Controller
      *
      * DELETE /api/v1/device-tokens
      */
-    public function destroy(StoreDeviceTokenRequest $request)
+    public function destroy(Request $request)
     {
-        DeviceToken::where('token', $request->validated('token'))
+        $request->validate([
+            'token' => ['required', 'string', 'min:20', 'max:512'],
+        ]);
+
+        DeviceToken::where('token', $request->token)
             ->where('user_id', $request->user()->id)
             ->delete();
 

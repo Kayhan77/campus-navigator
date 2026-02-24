@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Services\Notification;
 
+use App\DTOs\Notification\NotificationPayload;
 use App\Models\DeviceToken;
 use App\Models\User;
 use App\Services\Notification\FirebaseNotificationService;
@@ -27,6 +28,11 @@ class FirebaseNotificationServiceTest extends TestCase
         $this->service       = new FirebaseNotificationService($this->messagingMock);
     }
 
+    private function makePayload(string $title = 'Hello', string $body = 'World'): NotificationPayload
+    {
+        return new NotificationPayload(title: $title, body: $body, type: 'general');
+    }
+
     #[Test]
     public function it_returns_true_on_successful_single_token_send(): void
     {
@@ -35,7 +41,7 @@ class FirebaseNotificationServiceTest extends TestCase
             ->once()
             ->andReturn([]);
 
-        $result = $this->service->sendToToken('valid-token-123', 'Hello', 'World');
+        $result = $this->service->sendToToken('valid-token-123', $this->makePayload());
 
         $this->assertTrue($result);
     }
@@ -54,7 +60,7 @@ class FirebaseNotificationServiceTest extends TestCase
             ->once()
             ->andThrow($exception);
 
-        $result = $this->service->sendToToken($token, 'Hello', 'World');
+        $result = $this->service->sendToToken($token, $this->makePayload());
 
         $this->assertFalse($result);
         $this->assertDatabaseMissing('device_tokens', ['token' => $token]);
@@ -74,10 +80,9 @@ class FirebaseNotificationServiceTest extends TestCase
             ->once()
             ->andThrow($exception);
 
-        $result = $this->service->sendToToken($token, 'Hello', 'World');
+        $result = $this->service->sendToToken($token, $this->makePayload());
 
         $this->assertFalse($result);
-        // Token must NOT be deleted for transient errors
         $this->assertDatabaseHas('device_tokens', ['token' => $token]);
     }
 
@@ -88,10 +93,11 @@ class FirebaseNotificationServiceTest extends TestCase
 
         $user = User::factory()->create();
 
-        // No tokens registered — messaging should never be called
+        // No tokens registered — neither send nor sendMulticast should be called
+        $this->messagingMock->shouldNotReceive('send');
         $this->messagingMock->shouldNotReceive('sendMulticast');
 
-        $this->service->sendToUser($user, 'Test', 'Message');
+        $this->service->sendToUser($user, $this->makePayload());
     }
 
     protected function tearDown(): void

@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\Auth\PreRegisterController;
 use App\Http\Controllers\Api\V1\Auth\RefreshTokenController;
 use App\Http\Controllers\Api\V1\BuildingController;
 use App\Http\Controllers\Api\V1\DeviceTokenController;
+use App\Http\Controllers\Api\V1\NotificationPreferencesController;
 use App\Http\Controllers\Api\V1\Event\EventController;
 use App\Http\Controllers\Api\V1\LostFoundController;
 use App\Http\Controllers\Api\V1\RoomController;
@@ -64,6 +65,11 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
         ->middleware('throttle:10,1');
     Route::delete('/device-tokens', [DeviceTokenController::class, 'destroy'])
         ->middleware('throttle:10,1');
+
+    // Push notification preferences
+    Route::get('/notification-preferences',    [NotificationPreferencesController::class, 'show']);
+    Route::patch('/notification-preferences',  [NotificationPreferencesController::class, 'update']);
+    Route::delete('/notification-preferences', [NotificationPreferencesController::class, 'destroy']);
 
 });
 

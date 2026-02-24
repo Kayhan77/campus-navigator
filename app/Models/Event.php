@@ -12,14 +12,14 @@ class Event extends Model
         'location',
         'start_time',
         'end_time',
-        'reminder_sent_at',
-        'created_by'
+        'reminders_dispatched',
+        'created_by',
     ];
 
     protected $casts = [
-        'start_time'       => 'datetime',
-        'end_time'         => 'datetime',
-        'reminder_sent_at' => 'datetime',
+        'start_time'           => 'datetime',
+        'end_time'             => 'datetime',
+        'reminders_dispatched' => 'array',   // JSON array of dispatched window keys
     ];
 
     public function creator()
