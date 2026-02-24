@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\V1\NotificationPreferencesController;
 use App\Http\Controllers\Api\V1\Event\EventController;
 use App\Http\Controllers\Api\V1\LostFoundController;
 use App\Http\Controllers\Api\V1\RoomController;
+use App\Http\Controllers\Api\V1\GlobalSearchController;
 use App\Http\Controllers\Api\V1\RoomSearchController;
 use Illuminate\Support\Facades\Route;
 
@@ -44,6 +45,9 @@ Route::prefix('v1')->group(function () {
 
     Route::get('/schedule',              [AcademicScheduleController::class, 'index']);
     Route::get('/schedule/{academicSchedule}', [AcademicScheduleController::class, 'show']);
+
+    // Global cross-model search
+    Route::get('/search', GlobalSearchController::class);
 
 });
 
