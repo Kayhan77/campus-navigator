@@ -2,43 +2,83 @@
 
 namespace App\Services;
 
-use App\Models\Building;
 use App\DTOs\Building\CreateBuildingDTO;
 use App\DTOs\Building\UpdateBuildingDTO;
-use Illuminate\Support\Facades\Cache;
+use App\Filters\BuildingFilter;
+use App\Models\Building;
+use App\Services\Cache\CacheTags;
+use App\Services\Search\SearchCacheService;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\Request;
 
 class BuildingService
 {
-    public function create(CreateBuildingDTO $data): Building
-    {
-        $building = Building::create($data->toArray());
-        Cache::forget('buildings'); // Invalidate cache
-        return $building;
+    public function __construct(
+        private readonly SearchCacheService $cache
+    ) {}
+
+    // -------------------------------------------------------------------------
+    // Listings
+    // -------------------------------------------------------------------------
+
+    /**
+     * Filtered, cached, paginated list for the public API.
+     * Cache is tagged with CacheTags::BUILDINGS; BuildingObserver flushes it
+     * automatically on any create / update / delete.
+     */
+    public function listPaginated(
+        BuildingFilter $filter,
+        Request $request,
+        int $perPage
+    ): LengthAwarePaginator {
+        $key = SearchCacheService::buildKey(
+            CacheTags::BUILDINGS,
+            $filter,
+            (int) $request->input('page', 1),
+            $perPage,
+        );
+
+        return $this->cache->remember(
+            CacheTags::BUILDINGS,
+            $key,
+            fn () => Building::filter($filter)->withAllowed($request, [])->paginate($perPage)
+        );
     }
 
-    public function update(Building $building, UpdateBuildingDTO $data): Building
+    /**
+     * Admin-only paginated list — includes room counts, no filter pipeline.
+     */
+    public function listAdminPaginated(int $perPage = 15): LengthAwarePaginator
     {
-        $building->update($data->toArray());
-        Cache::forget('buildings'); // Invalidate cache
-        return $building;
+        return Building::withCount('rooms')->latest()->paginate($perPage);
     }
 
-    public function delete(Building $building): bool
-    {
-        return $building->delete();
-        
-        Cache::forget('buildings'); // Invalidate cache
-    }
-
-    public function getAll()
-    {
-        return Cache::remember('buildings', 60, function () {
-            return Building::with('rooms')->get();
-        });
-    }
+    // -------------------------------------------------------------------------
+    // Single record
+    // -------------------------------------------------------------------------
 
     public function getById(Building $building): Building
     {
         return $building->load('rooms');
+    }
+
+    // -------------------------------------------------------------------------
+    // Writes  (cache invalidation handled by BuildingObserver)
+    // -------------------------------------------------------------------------
+
+    public function create(CreateBuildingDTO $dto): Building
+    {
+        return Building::create($dto->toArray());
+    }
+
+    public function update(Building $building, UpdateBuildingDTO $dto): Building
+    {
+        $building->update($dto->toArray());
+        return $building->fresh();
+    }
+
+    public function delete(Building $building): void
+    {
+        $building->delete();
     }
 }

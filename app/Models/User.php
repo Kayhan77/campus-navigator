@@ -1,13 +1,17 @@
-<?php namespace App\Models; 
+<?php
 
-use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject; 
-use Illuminate\Database\Eloquent\Factories\HasFactory; 
-use Illuminate\Foundation\Auth\User as Authenticatable; 
+namespace App\Models;
+
+use App\Enums\UserRole;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use App\Models\DeviceToken; 
+use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 
-class User extends Authenticatable implements JWTSubject { 
-    use HasFactory, Notifiable; 
+class User extends Authenticatable implements JWTSubject
+{
+    use HasFactory, Notifiable;
+
     protected $fillable = [
         'name',
         'email',
@@ -16,24 +20,28 @@ class User extends Authenticatable implements JWTSubject {
         'is_verified',
         'email_verified_at',
         'notification_preferences',
-    ]; 
+    ];
 
-    protected $hidden = [ 
-        'password', 
-        'remember_token', 
-    ]; 
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
 
-    protected $casts = [ 
-        'email_verified_at' => 'datetime', 
-        'password' => 'hashed', 
-        'is_verified' => 'boolean', 
-    ]; 
-    
-    public function lostItems() { 
-        return $this->hasMany(LostItem::class); 
-    } 
-    public function events() { 
-        return $this->hasMany(Event::class, 'created_by'); 
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'is_verified' => 'boolean',
+        'role' => UserRole::class,
+    ];
+
+    public function lostItems()
+    {
+        return $this->hasMany(LostItem::class);
+    }
+
+    public function events()
+    {
+        return $this->hasMany(Event::class, 'created_by');
     }
 
     /**
@@ -70,26 +78,57 @@ class User extends Authenticatable implements JWTSubject {
         return array_merge($defaults, $stored);
     }
         
-    public function getJWTIdentifier() { 
-            return $this->getKey(); 
-    } 
-    
-    public function getJWTCustomClaims(): array { 
-        return []; 
-    } 
-    
-    public function isAdmin(): bool
+    public function getJWTIdentifier()
     {
-        return in_array($this->role, ['admin', 'super_admin']);
+        return $this->getKey();
+    }
+
+    public function getJWTCustomClaims(): array
+    {
+        return [];
+    }
+
+    public function roleEnum(): UserRole
+    {
+        if ($this->role instanceof UserRole) {
+            return $this->role;
+        }
+
+        return UserRole::tryFrom((string) $this->role) ?? UserRole::User;
+    }
+
+    public function hasRole(UserRole|string $role): bool
+    {
+        $expected = $role instanceof UserRole ? $role : UserRole::tryFrom($role);
+
+        if ($expected === null) {
+            return false;
+        }
+
+        return $this->roleEnum() === $expected;
+    }
+
+    /**
+     * @param  array<int, UserRole|string>  $roles
+     */
+    public function hasAnyRole(array $roles): bool
+    {
+        foreach ($roles as $role) {
+            if ($this->hasRole($role)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function isSuperAdmin(): bool
     {
-        return $this->role === 'super_admin';
+        return $this->hasRole(UserRole::SuperAdmin);
     }
 
     public function isUser(): bool
     {
-        return $this->role === 'user';
+        return $this->hasRole(UserRole::User);
     }
 }

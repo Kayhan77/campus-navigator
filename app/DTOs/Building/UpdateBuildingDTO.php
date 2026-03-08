@@ -1,29 +1,39 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DTOs\Building;
 
-class UpdateBuildingDTO
-{
-    public ?string $name;
-    public ?float $latitude;
-    public ?float $longitude;
-    public ?string $description;
+use App\Http\Requests\Building\UpdateBuildingRequest;
 
-    public function __construct(array $data)
+final class UpdateBuildingDTO
+{
+    public function __construct(
+        public readonly ?string $name,
+        public readonly ?float  $latitude,
+        public readonly ?float  $longitude,
+        public readonly ?string $description,
+    ) {}
+
+    public static function fromRequest(UpdateBuildingRequest $request): self
     {
-        $this->name = $data['name'] ?? null;
-        $this->latitude = $data['latitude'] ?? null;
-        $this->longitude = $data['longitude'] ?? null;
-        $this->description = $data['description'] ?? null;
+        $validated = $request->validated();
+
+        return new self(
+            name:        $validated['name'] ?? null,
+            latitude:    isset($validated['latitude'])  ? (float) $validated['latitude']  : null,
+            longitude:   isset($validated['longitude']) ? (float) $validated['longitude'] : null,
+            description: $validated['description'] ?? null,
+        );
     }
 
     public function toArray(): array
     {
         return array_filter([
-            'name' => $this->name,
-            'latitude' => $this->latitude,
-            'longitude' => $this->longitude,
+            'name'        => $this->name,
+            'latitude'    => $this->latitude,
+            'longitude'   => $this->longitude,
             'description' => $this->description,
-        ], fn($value) => $value !== null);
+        ], fn(mixed $value): bool => $value !== null);
     }
 }

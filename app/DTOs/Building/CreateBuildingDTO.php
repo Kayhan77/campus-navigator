@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DTOs\Building;
 
 use App\Http\Requests\Building\BuildingRequest;
 
-class CreateBuildingDTO
+final class CreateBuildingDTO
 {
     public function __construct(
         public string $name,

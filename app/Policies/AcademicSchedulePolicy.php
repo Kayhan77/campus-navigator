@@ -4,10 +4,12 @@ namespace App\Policies;
 
 use App\Models\AcademicSchedule;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
+use App\Policies\Concerns\AuthorizesByRole;
 
 class AcademicSchedulePolicy
 {
+    use AuthorizesByRole;
+
     /**
      * Determine whether the user can view any models.
      */
@@ -29,7 +31,7 @@ class AcademicSchedulePolicy
      */
     public function create(User $user): bool
     {
-        return $user->isAdmin();
+        return $this->canManageContent($user);
     }
 
     /**
@@ -37,7 +39,7 @@ class AcademicSchedulePolicy
      */
     public function update(User $user, AcademicSchedule $academicSchedule): bool
     {
-        return $user->isAdmin();
+        return $this->canManageContent($user);
     }
 
     /**
@@ -45,7 +47,7 @@ class AcademicSchedulePolicy
      */
     public function delete(User $user, AcademicSchedule $academicSchedule): bool
     {
-        return $user->isAdmin();
+        return $this->canManageContent($user);
     }
 
     /**
@@ -53,7 +55,7 @@ class AcademicSchedulePolicy
      */
     public function restore(User $user, AcademicSchedule $academicSchedule): bool
     {
-        return $user->isAdmin();
+        return $this->canManageContent($user);
     }
 
     /**
@@ -61,6 +63,6 @@ class AcademicSchedulePolicy
      */
     public function forceDelete(User $user, AcademicSchedule $academicSchedule): bool
     {
-        return $user->isAdmin();
+        return $this->canManageContent($user);
     }
 }

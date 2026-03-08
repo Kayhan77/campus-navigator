@@ -2,44 +2,83 @@
 
 namespace App\Services\Event;
 
-use App\Models\Event;
 use App\DTOs\Event\CreateEventDTO;
 use App\DTOs\Event\UpdateEventDTO;
-use Illuminate\Support\Facades\Cache;
-
+use App\Filters\EventFilter;
+use App\Models\Event;
+use App\Services\Cache\CacheTags;
+use App\Services\Search\SearchCacheService;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\Request;
 
 class EventService
 {
-    public function create(CreateEventDTO $data, int $userId): Event
-    {
-        $event = Event::create($data->toArray($userId));
-        Cache::forget('events'); 
-        return $event;
+    public function __construct(
+        private readonly SearchCacheService $cache
+    ) {}
+
+    // -------------------------------------------------------------------------
+    // Listings
+    // -------------------------------------------------------------------------
+
+    /**
+     * Filtered, cached, paginated list for the public API.
+     * Cache is tagged with CacheTags::EVENTS; EventObserver flushes it
+     * automatically on any create / update / delete.
+     */
+    public function listPaginated(
+        EventFilter $filter,
+        Request $request,
+        int $perPage
+    ): LengthAwarePaginator {
+        $key = SearchCacheService::buildKey(
+            CacheTags::EVENTS,
+            $filter,
+            (int) $request->input('page', 1),
+            $perPage,
+        );
+
+        return $this->cache->remember(
+            CacheTags::EVENTS,
+            $key,
+            fn () => Event::filter($filter)->withAllowed($request, [])->paginate($perPage)
+        );
     }
 
-    public function update(Event $event, UpdateEventDTO $data): Event
+    /**
+     * Admin-only paginated list — includes room relation, no filter pipeline.
+     */
+    public function listAdminPaginated(int $perPage = 15): LengthAwarePaginator
     {
-        $event->update($data->toArray());
-        Cache::forget('events'); 
-        return $event;
+        return Event::with('room')->latest()->paginate($perPage);
     }
 
-    public function delete(Event $event): bool
-    {
-        $deleted = $event->delete();
-        Cache::forget('events'); 
-        return $deleted;
-    }
-
-    public function getAll()
-    {
-        return Cache::remember('events', 60, function () {
-            return Event::latest()->paginate(10);
-        });
-    }
+    // -------------------------------------------------------------------------
+    // Single record
+    // -------------------------------------------------------------------------
 
     public function getById(Event $event): Event
     {
         return $event;
+    }
+
+    // -------------------------------------------------------------------------
+    // Writes  (cache invalidation handled by EventObserver)
+    // -------------------------------------------------------------------------
+
+    public function create(CreateEventDTO $dto, int $userId): Event
+    {
+        return Event::create(array_merge($dto->toArray(), ['created_by' => $userId]));
+    }
+
+    public function update(Event $event, UpdateEventDTO $dto): Event
+    {
+        $event->update($dto->toArray());
+        return $event->fresh();
+    }
+
+    public function delete(Event $event): void
+    {
+        $event->delete();
     }
 }

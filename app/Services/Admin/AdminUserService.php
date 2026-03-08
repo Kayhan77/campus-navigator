@@ -2,6 +2,7 @@
 
 namespace App\Services\Admin;
 
+use App\Enums\UserRole;
 use App\Exceptions\ApiException;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -31,15 +32,16 @@ class AdminUserService
      */
     public function updateRole(User $actor, User $target, string $newRole): User
     {
-        $this->authorizeRoleChange($actor, $target, $newRole);
+        $newRoleEnum = UserRole::from($newRole);
+        $this->authorizeRoleChange($actor, $target, $newRoleEnum);
 
-        $target->role = $newRole;
+        $target->role = $newRoleEnum;
         $target->save();
 
         return $target->fresh();
     }
 
-    private function authorizeRoleChange(User $actor, User $target, string $newRole): void
+    private function authorizeRoleChange(User $actor, User $target, UserRole $newRole): void
     {
         // Prevent self-demotion
         if ($actor->id === $target->id) {
@@ -47,8 +49,8 @@ class AdminUserService
         }
 
         // Only super_admin can promote to admin / super_admin or demote admins
-        $privilegedChange = in_array($newRole, ['admin', 'super_admin'])
-            || in_array($target->role, ['admin', 'super_admin']);
+        $privilegedChange = $newRole->isAdminLevel()
+            || $target->roleEnum()->isAdminLevel();
 
         if ($privilegedChange && !$actor->isSuperAdmin()) {
             throw new ApiException(

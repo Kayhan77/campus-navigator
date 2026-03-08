@@ -1,22 +1,45 @@
 <?php
 namespace App\Services;
 
-use App\Models\Room;
 use App\DTOs\RoomSearchDTO;
+use App\Models\Room;
+use App\Services\Cache\CacheTags;
+use App\Services\Search\SearchCacheService;
+use Illuminate\Database\Eloquent\Collection;
 
 class RoomSearchService
 {
-    public function search(RoomSearchDTO $dto)
+    public function __construct(
+        private readonly SearchCacheService $cache
+    ) {}
+
+    /**
+     * Search rooms by building, room number, and/or floor.
+     *
+     * Results are cached under the 'rooms' Redis tag so RoomObserver
+     * invalidates them automatically on any room create / update / delete.
+     */
+    public function search(RoomSearchDTO $dto): Collection
     {
-        $query = Room::query()->with('building');
+        $key = SearchCacheService::buildSimpleKey(
+            CacheTags::ROOMS,
+            $dto->toCacheParameters()
+        );
 
-        if ($dto->building_id) 
-            $query->where('building_id', $dto->building_id);
-        if ($dto->room_number) 
-            $query->where('room_number', 'like', "%{$dto->room_number}%");
-        if ($dto->floor) 
-            $query->where('floor', $dto->floor);
+        return $this->cache->remember(CacheTags::ROOMS, $key, function () use ($dto) {
+            $query = Room::query()->with('building');
 
-        return $query->get();
+            if ($dto->building_id !== null) {
+                $query->where('building_id', $dto->building_id);
+            }
+            if ($dto->room_number !== null) {
+                $query->where('room_number', 'like', "%{$dto->room_number}%");
+            }
+            if ($dto->floor !== null) {
+                $query->where('floor', $dto->floor);
+            }
+
+            return $query->get();
+        });
     }
 }

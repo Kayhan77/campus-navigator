@@ -40,9 +40,20 @@ return [
     |--------------------------------------------------------------------------
     | Minimum Search Query Length
     |--------------------------------------------------------------------------
-    | Ignore search terms shorter than this to avoid full-table scans.
+    | Ignore search terms shorter than this to avoid full-table scans on
+    | common noise words (e.g. "a", "to").
     */
     'min_search_length' => (int) env('SEARCH_MIN_LENGTH', 2),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Maximum Search Query Length
+    |--------------------------------------------------------------------------
+    | Clamp the incoming search term to this length before querying.
+    | Prevents abuse via enormous LIKE patterns that saturate the DB.
+    | 100 characters is enough for any realistic search; adjust as needed.
+    */
+    'max_search_length' => (int) env('SEARCH_MAX_LENGTH', 100),
 
     /*
     |--------------------------------------------------------------------------

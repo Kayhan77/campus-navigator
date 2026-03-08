@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Filters;
 
 /**
@@ -18,7 +20,7 @@ namespace App\Filters;
  * Note: user_id filtering is applied at the controller level,
  * never exposed as a raw query parameter.
  */
-class LostFoundFilter extends QueryFilter
+final class LostFoundFilter extends QueryFilter
 {
     protected array $searchable = ['title', 'description', 'location'];
 
@@ -53,7 +55,7 @@ class LostFoundFilter extends QueryFilter
         $this->builder->where(
             'location',
             'LIKE',
-            '%' . addcslashes(trim($value), '%_\\') . '%'
+            '%' . $this->escapeLike($value) . '%'
         );
     }
 }

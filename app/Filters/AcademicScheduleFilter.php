@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Filters;
 
 /**
@@ -13,7 +15,7 @@ namespace App\Filters;
  *   ?sort_by=day|course_name|start_time
  *   ?sort_dir=asc|desc
  */
-class AcademicScheduleFilter extends QueryFilter
+final class AcademicScheduleFilter extends QueryFilter
 {
     protected array $searchable = ['course_name'];
 

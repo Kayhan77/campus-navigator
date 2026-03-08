@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use App\Models\LostItem;
 
@@ -12,10 +13,10 @@ class LostItemPolicy
     public function create(User $user): bool { return true; } // anyone can report
     public function update(User $user, LostItem $item): bool
     {
-        return $user->id === $item->user_id || $user->role === 'admin';
+        return $user->id === $item->user_id || $user->hasAnyRole(UserRole::adminRoles());
     }
     public function delete(User $user, LostItem $item): bool
     {
-        return $user->id === $item->user_id || $user->role === 'admin';
+        return $user->id === $item->user_id || $user->hasAnyRole(UserRole::adminRoles());
     }
 }

@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DTOs\Room;
 
 use App\Http\Requests\Room\RoomRequest;
 
-class CreateRoomDTO
+final class CreateRoomDTO
 {
     public function __construct(
         public int $building_id,

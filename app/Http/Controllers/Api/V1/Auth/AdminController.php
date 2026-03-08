@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Auth;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -12,7 +13,7 @@ class AdminController extends Controller
     {
         $this->authorize('makeAdmin', User::class); // only admin can do this
 
-        $user->role = 'admin';
+        $user->role = UserRole::Admin;
         $user->save();
 
         return response()->json([

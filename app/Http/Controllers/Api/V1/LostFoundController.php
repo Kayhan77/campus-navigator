@@ -2,86 +2,80 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\UserRole;
 use App\DTOs\LostItem\CreateLostItemDTO;
 use App\DTOs\LostItem\UpdateLostItemDTO;
-use App\Services\LostItemService;
+use App\Filters\LostFoundFilter;
+use App\Helpers\ApiResponse;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\LostItem\LostItemRequest;
 use App\Http\Requests\LostItem\UpdateLostItemRequest;
 use App\Http\Resources\Api\V1\LostItemResource;
 use App\Models\LostItem;
-use App\Http\Controllers\Controller;
-use App\Filters\LostFoundFilter;
-use App\Services\Search\SearchCacheService;
-use App\Helpers\ApiResponse;
+use App\Services\LostItemService;
 use Illuminate\Http\Request;
 
 class LostFoundController extends Controller
 {
-    protected LostItemService $service;
+    public function __construct(
+        private readonly LostItemService $service
+    ) {}
 
-    public function __construct(LostItemService $service)
+    public function index(Request $request, LostFoundFilter $filter)
     {
-        $this->service = $service;
-    }
+        $user = $request->user();
 
-    // List all lost items
-    public function index(Request $request, LostFoundFilter $filter, SearchCacheService $cache)
-    {
-        $user     = $request->user();
-        $perPage  = max(1, min((int) $request->input('per_page', config('search.default_per_page', 15)), config('search.max_per_page', 50)));
-        $cacheKey = SearchCacheService::buildKey('lost_items', $filter, $request->input('page', 1), $perPage, $user?->id);
+        // Non-admin authenticated users may only see their own items.
+        // Null = no scope → admins and unauthenticated requests see everything.
+        $scopedUserId = ($user && ! $user->hasAnyRole(UserRole::adminRoles())) ? $user->id : null;
 
-        $paginator = $cache->remember('lost_items', $cacheKey, function () use ($filter, $request, $user, $perPage) {
-            $query = LostItem::query();
+        $paginator = $this->service->listPaginated(
+            $filter,
+            $request,
+            $this->resolvePerPage($request),
+            $scopedUserId,
+        );
 
-            if ($user && ! $user->isAdmin()) {
-                $query->where('user_id', $user->id);
-            }
-
-            // 'user' is a safe default; LostItem::$allowedIncludes controls extras.
-            return $query->filter($filter)->withAllowed($request, ['user'])->paginate($perPage);
-        });
-
+        /** @var \Illuminate\Pagination\LengthAwarePaginator $paginator */
         $paginator->getCollection()->transform(fn ($item) => new LostItemResource($item));
 
         return ApiResponse::paginated($paginator, 'Lost items retrieved successfully.');
     }
 
-    // Show single lost item
     public function show(LostItem $lostItem)
     {
-        return new LostItemResource($this->service->getById($lostItem));
+        return ApiResponse::success(
+            new LostItemResource($this->service->getById($lostItem)),
+            'Lost item retrieved successfully.'
+        );
     }
 
-    // Create new lost item
     public function store(LostItemRequest $request)
-    {
+    {                                              
         $this->authorize('create', LostItem::class);
 
-        $dto = CreateLostItemDTO::fromRequest($request);
+        $dto  = CreateLostItemDTO::fromRequest($request);
         $item = $this->service->create($dto, $request->user()->id);
 
-        return new LostItemResource($item);
+        return ApiResponse::success(new LostItemResource($item), 'Lost item reported successfully.', 201);
     }
 
-    // Update lost item
     public function update(UpdateLostItemRequest $request, LostItem $lostItem)
     {
         $this->authorize('update', $lostItem);
 
-        $dto = new UpdateLostItemDTO($request->validated());
+        $dto  = UpdateLostItemDTO::fromRequest($request);
         $item = $this->service->update($lostItem, $dto);
 
-        return new LostItemResource($item);
+        return ApiResponse::success(new LostItemResource($item), 'Lost item updated successfully.');
     }
 
-    // Delete lost item
     public function destroy(LostItem $lostItem)
     {
         $this->authorize('delete', $lostItem);
 
         $this->service->delete($lostItem);
 
-        return ['message' => 'Item deleted successfully'];
+        return ApiResponse::success(null, 'Lost item deleted successfully.');
     }
 }

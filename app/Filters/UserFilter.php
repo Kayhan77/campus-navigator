@@ -2,6 +2,8 @@
 
 namespace App\Filters;
 
+use App\Enums\UserRole;
+
 /**
  * Filter for the users table — used on admin endpoints only.
  *
@@ -39,7 +41,7 @@ class UserFilter extends QueryFilter
      */
     public function role(string $value): void
     {
-        if (in_array($value, ['user', 'admin', 'super_admin'], true)) {
+        if (in_array($value, UserRole::values(), true)) {
             $this->builder->where('role', $value);
         }
     }

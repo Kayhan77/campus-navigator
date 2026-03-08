@@ -15,15 +15,15 @@ use App\Services\AcademicScheduleService;
 class AdminAcademicScheduleController extends Controller
 {
     public function __construct(
-        private AcademicScheduleService $service
+        private readonly AcademicScheduleService $service
     ) {}
 
     public function index()
     {
-        return ApiResponse::success(
-            AcademicScheduleResource::collection($this->service->getAll()),
-            'Academic schedules retrieved successfully.'
-        );
+        $schedules = $this->service->listAdminPaginated()
+            ->through(fn ($schedule) => new AcademicScheduleResource($schedule));
+
+        return ApiResponse::paginated($schedules, 'Academic schedules retrieved successfully.');
     }
 
     public function show(AcademicSchedule $academicSchedule)
@@ -48,7 +48,7 @@ class AdminAcademicScheduleController extends Controller
 
     public function update(UpdateAcademicScheduleRequest $request, AcademicSchedule $academicSchedule)
     {
-        $dto     = new UpdateAcademicScheduleDTO($request->validated());
+        $dto     = UpdateAcademicScheduleDTO::fromRequest($request);
         $updated = $this->service->update($academicSchedule, $dto);
 
         return ApiResponse::success(

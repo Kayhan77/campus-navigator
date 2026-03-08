@@ -2,60 +2,60 @@
 
 namespace App\Http\Controllers\Api\V1\Event;
 
-use Illuminate\Http\Request;
-use App\Models\Event;
+use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Calendar\GetCalendarEventsRequest;
+use App\Http\Resources\Api\V1\EventResource;
+use App\Models\Event;
+use App\Services\Cache\CacheTags;
+use App\Services\Search\SearchCacheService;
+use Illuminate\Support\Carbon;
 
 class EventCalendarController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(Request $request)
-    {
-        $events = Event::all();
+    public function __construct(
+        private readonly SearchCacheService $cache
+    ) {}
 
-        // Transform for frontend calendar
-        $calendarEvents = $events->map(function ($event) {
-            return [
-                'title' => $event->title,
-                'start' => $event->start_time->toDateTimeString(),
-                'end'   => $event->end_time->toDateTimeString(),
-            ];
+    /**
+     * Return events for the requested month/year shaped for a calendar widget.
+     *
+     * Defaults to the current month if no params are supplied.
+     * Bounded to a single calendar month — never loads the full table.
+     * Cached under the 'events' Redis tag; EventObserver invalidates it
+     * automatically on any write.
+     */
+    public function index(GetCalendarEventsRequest $request)
+    {
+        $month = $request->month();
+        $year  = $request->year();
+
+        $key = SearchCacheService::buildSimpleKey(
+            CacheTags::EVENTS,
+            ['view' => 'calendar', 'month' => $month, 'year' => $year, 'from' => $request->from, 'to' => $request->to]
+        );
+
+        $events = $this->cache->remember(CacheTags::EVENTS, $key, function () use ($month, $year, $request) {
+            $start = $request->from
+                ? Carbon::parse($request->from)->startOfDay()
+                : Carbon::create($year, $month, 1)->startOfMonth();
+
+            $end = $request->to
+                ? Carbon::parse($request->to)->endOfDay()
+                : $start->copy()->endOfMonth();
+
+            return Event::select(['id', 'title', 'location', 'start_time', 'end_time'])
+                ->where(function ($q) use ($start, $end) {
+                    $q->whereBetween('start_time', [$start, $end])
+                      ->orWhereBetween('end_time', [$start, $end]);
+                })
+                ->orderBy('start_time')
+                ->get();
         });
 
-        return response()->json($calendarEvents);
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return ApiResponse::success(
+            EventResource::collection($events),
+            'Calendar events retrieved successfully.'
+        );
     }
 }

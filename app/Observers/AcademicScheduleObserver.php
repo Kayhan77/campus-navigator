@@ -1,11 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Observers;
 
-class AcademicScheduleObserver extends BaseSearchObserver
+use App\Services\Cache\CacheTags;
+
+final class AcademicScheduleObserver extends BaseModelObserver
 {
-    protected function modelTag(): string
+    protected function tag(): string
     {
-        return 'academic_schedules';
+        return CacheTags::ACADEMIC_SCHEDULES;
     }
 }

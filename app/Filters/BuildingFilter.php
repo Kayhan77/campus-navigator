@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Filters;
 
 /**
@@ -11,7 +13,7 @@ namespace App\Filters;
  *   ?sort_by=name    Order column
  *   ?sort_dir=asc|desc
  */
-class BuildingFilter extends QueryFilter
+final class BuildingFilter extends QueryFilter
 {
     protected array $searchable = ['name', 'description'];
 

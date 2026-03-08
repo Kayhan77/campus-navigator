@@ -1,48 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Observers;
 
-use App\Services\Search\SearchCacheService;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Base observer that invalidates the model's search cache tag
- * on any write operation.
+ * @deprecated Extend {@see BaseModelObserver} directly instead.
  *
- * Concrete observers extend this class and set
- * protected string $modelTag = 'events';
+ * Kept as a compatibility shim so any external code that still
+ * type-hints BaseSearchObserver does not break. Remove once all
+ * usages have been migrated.
  */
-abstract class BaseSearchObserver
+abstract class BaseSearchObserver extends BaseModelObserver
 {
-    public function __construct(
-        protected readonly SearchCacheService $cache
-    ) {}
-
     /**
-     * The Redis tag used for this model's cached search results.
-     * Subclasses MUST override this.
+     * @deprecated Implement {@see BaseModelObserver::tag()} instead.
      */
-    abstract protected function modelTag(): string;
-
-    // ─── Eloquent lifecycle hooks ─────────────────────────────────────────────
-
-    public function created(Model $model): void
+    protected function modelTag(): string
     {
-        $this->cache->invalidate($this->modelTag());
-    }
-
-    public function updated(Model $model): void
-    {
-        $this->cache->invalidate($this->modelTag());
-    }
-
-    public function deleted(Model $model): void
-    {
-        $this->cache->invalidate($this->modelTag());
-    }
-
-    public function restored(Model $model): void
-    {
-        $this->cache->invalidate($this->modelTag());
+        return $this->tag();
     }
 }

@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\V1\BuildingController;
 use App\Http\Controllers\Api\V1\DeviceTokenController;
 use App\Http\Controllers\Api\V1\NotificationPreferencesController;
 use App\Http\Controllers\Api\V1\Event\EventController;
+use App\Http\Controllers\Api\V1\Event\EventCalendarController;
 use App\Http\Controllers\Api\V1\LostFoundController;
 use App\Http\Controllers\Api\V1\RoomController;
 use App\Http\Controllers\Api\V1\GlobalSearchController;
@@ -42,6 +43,7 @@ Route::prefix('v1')->group(function () {
 
     Route::get('/events',            [EventController::class, 'index']);
     Route::get('/events/{event}',    [EventController::class, 'show']);
+    Route::get('/calendar/events',   [EventCalendarController::class, 'index']);
 
     Route::get('/schedule',              [AcademicScheduleController::class, 'index']);
     Route::get('/schedule/{academicSchedule}', [AcademicScheduleController::class, 'show']);

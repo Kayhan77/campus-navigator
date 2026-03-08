@@ -1,25 +1,29 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DTOs\AcademicSchedule;
 
-class CreateAcademicScheduleDTO
+use App\Http\Requests\AcademicSchedule\AcademicScheduleRequest;
+
+final class CreateAcademicScheduleDTO
 {
     public function __construct(
-        public string $course_name,
-        public string $day,
-        public string $start_time,
-        public string $end_time,
-        public int $room_id
+        public readonly string $course_name,
+        public readonly string $day,
+        public readonly string $start_time,
+        public readonly string $end_time,
+        public readonly int    $room_id,
     ) {}
 
-    public static function fromRequest($request): self
+    public static function fromRequest(AcademicScheduleRequest $request): self
     {
         return new self(
-            $request->course_name,
-            $request->day,
-            $request->start_time,
-            $request->end_time,
-            $request->room_id
+            course_name: $request->validated('course_name'),
+            day:         $request->validated('day'),
+            start_time:  $request->validated('start_time'),
+            end_time:    $request->validated('end_time'),
+            room_id:     (int) $request->validated('room_id'),
         );
     }
 
@@ -27,10 +31,10 @@ class CreateAcademicScheduleDTO
     {
         return [
             'course_name' => $this->course_name,
-            'day' => $this->day,
-            'start_time' => $this->start_time,
-            'end_time' => $this->end_time,
-            'room_id' => $this->room_id,
+            'day'         => $this->day,
+            'start_time'  => $this->start_time,
+            'end_time'    => $this->end_time,
+            'room_id'     => $this->room_id,
         ];
     }
 }

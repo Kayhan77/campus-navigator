@@ -1,11 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Observers;
 
-class BuildingObserver extends BaseSearchObserver
+use App\Services\Cache\CacheTags;
+
+final class BuildingObserver extends BaseModelObserver
 {
-    protected function modelTag(): string
+    protected function tag(): string
     {
-        return 'buildings';
+        return CacheTags::BUILDINGS;
     }
 }

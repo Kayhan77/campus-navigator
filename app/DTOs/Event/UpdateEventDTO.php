@@ -1,32 +1,43 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DTOs\Event;
 
-class UpdateEventDTO
-{
-    public ?string $title;
-    public ?string $description;
-    public ?string $location;
-    public ?string $start_time;
-    public ?string $end_time;
+use App\Http\Requests\Event\UpdateEventRequest;
+use Carbon\Carbon;
 
-    public function __construct(array $data)
+final class UpdateEventDTO
+{
+    public function __construct(
+        public readonly ?string $title,
+        public readonly ?string $description,
+        public readonly ?string $location,
+        public readonly ?Carbon $start_time,
+        public readonly ?Carbon $end_time,
+    ) {}
+
+    public static function fromRequest(UpdateEventRequest $request): self
     {
-        $this->title = $data['title'] ?? null;
-        $this->description = $data['description'] ?? null;
-        $this->location = $data['location'] ?? null;
-        $this->start_time = $data['start_time'] ?? null;
-        $this->end_time = $data['end_time'] ?? null;
+        $validated = $request->validated();
+
+        return new self(
+            title:       $validated['title'] ?? null,
+            description: $validated['description'] ?? null,
+            location:    $validated['location'] ?? null,
+            start_time:  isset($validated['start_time']) ? Carbon::parse($validated['start_time']) : null,
+            end_time:    isset($validated['end_time'])   ? Carbon::parse($validated['end_time'])   : null,
+        );
     }
 
     public function toArray(): array
     {
         return array_filter([
-            'title' => $this->title,
+            'title'       => $this->title,
             'description' => $this->description,
-            'location' => $this->location,
-            'start_time' => $this->start_time,
-            'end_time' => $this->end_time,
-        ], fn($value) => $value !== null);
+            'location'    => $this->location,
+            'start_time'  => $this->start_time?->toDateTimeString(),
+            'end_time'    => $this->end_time?->toDateTimeString(),
+        ], fn(mixed $value): bool => $value !== null);
     }
 }

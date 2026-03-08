@@ -1,29 +1,39 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DTOs\LostItem;
 
-class UpdateLostItemDTO
-{
-    public ?string $title;
-    public ?string $description;
-    public ?string $location;
-    public ?string $status;
+use App\Http\Requests\LostItem\UpdateLostItemRequest;
 
-    public function __construct(array $data)
+final class UpdateLostItemDTO
+{
+    public function __construct(
+        public readonly ?string $title,
+        public readonly ?string $description,
+        public readonly ?string $location,
+        public readonly ?string $status,
+    ) {}
+
+    public static function fromRequest(UpdateLostItemRequest $request): self
     {
-        $this->title = $data['title'] ?? null;
-        $this->description = $data['description'] ?? null;
-        $this->location = $data['location'] ?? null;
-        $this->status = $data['status'] ?? null;
+        $validated = $request->validated();
+
+        return new self(
+            title:       $validated['title'] ?? null,
+            description: $validated['description'] ?? null,
+            location:    $validated['location'] ?? null,
+            status:      $validated['status'] ?? null,
+        );
     }
 
     public function toArray(): array
     {
         return array_filter([
-            'title' => $this->title,
+            'title'       => $this->title,
             'description' => $this->description,
-            'location' => $this->location,
-            'status' => $this->status,
-        ], fn($value) => $value !== null);
+            'location'    => $this->location,
+            'status'      => $this->status,
+        ], fn(mixed $value): bool => $value !== null);
     }
 }

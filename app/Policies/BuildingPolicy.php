@@ -2,11 +2,14 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\Building;
+use App\Models\User;
+use App\Policies\Concerns\AuthorizesByRole;
 
 class BuildingPolicy
 {
+    use AuthorizesByRole;
+
     public function viewAny(User $user): bool
     {
         return true;
@@ -14,16 +17,16 @@ class BuildingPolicy
 
     public function create(User $user): bool
     {
-        return $user->isAdmin();
+        return $this->canManageContent($user);
     }
 
     public function update(User $user, Building $building): bool
     {
-        return $user->isAdmin();
+        return $this->canManageContent($user);
     }
 
     public function delete(User $user, Building $building): bool
     {
-        return $user->isAdmin();
+        return $this->canManageContent($user);
     }
 }

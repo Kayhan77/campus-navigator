@@ -15,15 +15,15 @@ use App\Services\RoomService;
 class AdminRoomController extends Controller
 {
     public function __construct(
-        private RoomService $service
+        private readonly RoomService $service
     ) {}
 
     public function index()
     {
-        return ApiResponse::success(
-            RoomResource::collection($this->service->getAll()),
-            'Rooms retrieved successfully.'
-        );
+        $rooms = $this->service->listAdminPaginated()
+            ->through(fn ($room) => new RoomResource($room));
+
+        return ApiResponse::paginated($rooms, 'Rooms retrieved successfully.');
     }
 
     public function show(Room $room)
@@ -39,22 +39,15 @@ class AdminRoomController extends Controller
         $dto  = CreateRoomDTO::fromRequest($request);
         $room = $this->service->create($dto);
 
-        return ApiResponse::success(
-            new RoomResource($room),
-            'Room created successfully.',
-            201
-        );
+        return ApiResponse::success(new RoomResource($room), 'Room created successfully.', 201);
     }
 
     public function update(UpdateRoomRequest $request, Room $room)
     {
-        $dto     = new UpdateRoomDTO($request->validated());
+        $dto     = UpdateRoomDTO::fromRequest($request);
         $updated = $this->service->update($room, $dto);
 
-        return ApiResponse::success(
-            new RoomResource($updated),
-            'Room updated successfully.'
-        );
+        return ApiResponse::success(new RoomResource($updated), 'Room updated successfully.');
     }
 
     public function destroy(Room $room)

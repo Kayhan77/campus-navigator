@@ -6,6 +6,7 @@ use App\DTOs\Notification\NotificationPayload;
 use App\Models\NotificationLog;
 use App\Models\User;
 use App\Services\Notification\FirebaseNotificationService;
+use DateTimeInterface;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -61,13 +62,33 @@ class SendPushNotificationJob implements ShouldQueue
         return [new RateLimited('push-notifications')];
     }
 
+    /**
+     * Stop retrying stale jobs that are no longer useful.
+     */
+    public function retryUntil(): DateTimeInterface
+    {
+        return now()->addMinutes(15);
+    }
+
     // =========================================================================
     // Execution
     // =========================================================================
 
     public function handle(FirebaseNotificationService $firebaseService): void
     {
-        $user = User::with('deviceTokens')->find($this->userId);
+        $payload = NotificationPayload::fromArray($this->payload);
+
+        if ($this->alreadyDelivered($payload)) {
+            Log::info('[Push] Job skipped — already delivered (idempotent)', [
+                'user_id' => $this->userId,
+                'type' => $payload->type,
+                'event_id' => $payload->data['event_id'] ?? null,
+            ]);
+
+            return;
+        }
+
+        $user = User::query()->select(['id'])->find($this->userId);
 
         if (! $user) {
             Log::warning('[Push] Job skipped — user not found', [
@@ -76,23 +97,24 @@ class SendPushNotificationJob implements ShouldQueue
             return;
         }
 
-        if ($user->deviceTokens->isEmpty()) {
-            Log::info('[Push] Job skipped — user has no device tokens', [
+        try {
+            $delivered = $firebaseService->sendToUser($user, $payload);
+
+            Log::info('[Push] Notification processed', [
                 'user_id' => $this->userId,
+                'type' => $payload->type,
+                'tokens_delivered' => count($delivered),
             ]);
-            return;
+        } catch (Throwable $exception) {
+            Log::warning('[Push] Attempt failed — will retry if attempts remain', [
+                'user_id' => $this->userId,
+                'type' => $payload->type,
+                'attempt' => $this->attempts(),
+                'error' => $exception->getMessage(),
+            ]);
+
+            throw $exception;
         }
-
-        $payload = NotificationPayload::fromArray($this->payload);
-
-        $delivered = $firebaseService->sendToUser($user, $payload);
-
-        Log::info('[Push] Notification sent', [
-            'user_id'         => $this->userId,
-            'type'            => $payload->type,
-            'tokens_total'    => $user->deviceTokens->count(),
-            'tokens_delivered'=> count($delivered),
-        ]);
     }
 
     // =========================================================================
@@ -140,5 +162,16 @@ class SendPushNotificationJob implements ShouldQueue
     public function backoff(): array
     {
         return [10, 30, 60];
+    }
+
+    private function alreadyDelivered(NotificationPayload $payload): bool
+    {
+        return NotificationLog::query()
+            ->where('user_id', $this->userId)
+            ->where('type', $payload->type)
+            ->where('event_id', $payload->data['event_id'] ?? null)
+            ->where('status', 'sent')
+            ->where('dispatched_at', '>=', now()->subHours(24))
+            ->exists();
     }
 }

@@ -1,18 +1,28 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DTOs\Room;
 
-class UpdateRoomDTO
-{
-    public ?int $building_id;
-    public ?string $room_number;
-    public ?int $floor;
+use App\Http\Requests\Room\UpdateRoomRequest;
 
-    public function __construct(array $data)
+final class UpdateRoomDTO
+{
+    public function __construct(
+        public readonly ?int    $building_id,
+        public readonly ?string $room_number,
+        public readonly ?int    $floor,
+    ) {}
+
+    public static function fromRequest(UpdateRoomRequest $request): self
     {
-        $this->building_id = $data['building_id'] ?? null;
-        $this->room_number = $data['room_number'] ?? null;
-        $this->floor = $data['floor'] ?? null;
+        $validated = $request->validated();
+
+        return new self(
+            building_id: isset($validated['building_id']) ? (int) $validated['building_id'] : null,
+            room_number: $validated['room_number'] ?? null,
+            floor:       isset($validated['floor']) ? (int) $validated['floor'] : null,
+        );
     }
 
     public function toArray(): array
@@ -20,7 +30,7 @@ class UpdateRoomDTO
         return array_filter([
             'building_id' => $this->building_id,
             'room_number' => $this->room_number,
-            'floor' => $this->floor,
-        ], fn($value) => $value !== null);
+            'floor'       => $this->floor,
+        ], fn(mixed $value): bool => $value !== null);
     }
 }

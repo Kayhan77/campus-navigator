@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Enums\UserRole;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use App\Models\Event;
@@ -36,6 +37,6 @@ class AuthServiceProvider extends ServiceProvider
         $this->registerPolicies();
 
         // Optional: global gates
-        Gate::define('admin-only', fn ($user) => $user->role === 'admin');
+        Gate::define('admin-only', fn ($user) => $user->hasAnyRole(UserRole::adminRoles()));
     }
 }

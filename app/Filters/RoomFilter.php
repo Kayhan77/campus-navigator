@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Filters;
 
 /**
@@ -12,8 +14,13 @@ namespace App\Filters;
  *   ?floor=2         Exact match on floor number
  *   ?sort_by=room_number
  *   ?sort_dir=asc|desc
+ *
+ * N+1 note: rooms always display their building name in list views.
+ * Add 'building' to $with once RoomResource renders building details:
+ *
+ *   protected array $with = ['building'];
  */
-class RoomFilter extends QueryFilter
+final class RoomFilter extends QueryFilter
 {
     protected array $searchable = ['room_number'];
 

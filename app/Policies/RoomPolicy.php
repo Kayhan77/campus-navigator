@@ -4,10 +4,12 @@ namespace App\Policies;
 
 use App\Models\Room;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
+use App\Policies\Concerns\AuthorizesByRole;
 
 class RoomPolicy
 {
+    use AuthorizesByRole;
+
     /**
      * Determine whether the user can view any models.
      */
@@ -29,7 +31,7 @@ class RoomPolicy
      */
     public function create(User $user): bool
     {
-        return $user->isAdmin();
+        return $this->canManageContent($user);
     }
 
     /**
@@ -37,7 +39,7 @@ class RoomPolicy
      */
     public function update(User $user, Room $room): bool
     {
-        return $user->isAdmin();
+        return $this->canManageContent($user);
     }
 
     /**
@@ -45,7 +47,7 @@ class RoomPolicy
      */
     public function delete(User $user, Room $room): bool
     {
-        return $user->isAdmin();
+        return $this->canManageContent($user);
     }
 
     /**
@@ -53,7 +55,7 @@ class RoomPolicy
      */
     public function restore(User $user, Room $room): bool
     {
-        return $user->isAdmin();
+        return $this->canManageContent($user);
     }
 
     /**
@@ -61,6 +63,6 @@ class RoomPolicy
      */
     public function forceDelete(User $user, Room $room): bool
     {
-        return $user->isAdmin();
+        return $this->canManageContent($user);
     }
 }

@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Filters;
 
+use App\Enums\SearchMode;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -16,8 +19,29 @@ use Illuminate\Database\Eloquent\Builder;
  *   ?date_field=start_time Which date column (start_time|end_time|created_at)
  *   ?sort_by=start_time    Order column
  *   ?sort_dir=asc|desc
+ *
+ * ─── Search mode ─────────────────────────────────────────────────
+ *
+ *   Default: SearchMode::Like  (LIKE '%term%').
+ *   Switch to SearchMode::FullText and override applyFullTextSearch()
+ *   once the FULLTEXT index from the performance migration is confirmed
+ *   in production:
+ *
+ *       protected SearchMode $searchMode = SearchMode::FullText;
+ *
+ *       protected function applyFullTextSearch(string $term): void
+ *       {
+ *           $this->builder->whereFullText($this->searchable, $term);
+ *       }
+ *
+ * ─── N+1 prevention ──────────────────────────────────────────────
+ *
+ *   Events are owned by a user (created_by). If EventResource renders
+ *   the creator name, add 'creator' to $with:
+ *
+ *       protected array $with = ['creator'];
  */
-class EventFilter extends QueryFilter
+final class EventFilter extends QueryFilter
 {
     protected array $searchable = ['title', 'description', 'location'];
 
@@ -41,14 +65,15 @@ class EventFilter extends QueryFilter
     // ─────────────────────────────────────────────────────────────
 
     /**
-     * Partial match on location (more useful than an exact match).
+     * Partial LIKE match on location.
+     * Uses escapeLike() so user input like "%Hall%" stays literal.
      */
     public function location(string $value): void
     {
         $this->builder->where(
             'location',
             'LIKE',
-            '%' . addcslashes(trim($value), '%_\\') . '%'
+            '%' . $this->escapeLike($value) . '%'
         );
     }
 }

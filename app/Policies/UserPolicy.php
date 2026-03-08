@@ -3,10 +3,12 @@
 namespace App\Policies;
 
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
+use App\Policies\Concerns\AuthorizesByRole;
 
 class UserPolicy
 {
+    use AuthorizesByRole;
+
     /**
      * Determine whether the user can view any models.
      */
@@ -65,6 +67,6 @@ class UserPolicy
 
     public function makeAdmin(User $user)
     {
-        return $user->isAdmin();
+        return $this->canManageContent($user);
     }
 }

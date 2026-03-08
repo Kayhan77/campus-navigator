@@ -1,11 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Observers;
 
-class RoomObserver extends BaseSearchObserver
+use App\Services\Cache\CacheTags;
+
+final class RoomObserver extends BaseModelObserver
 {
-    protected function modelTag(): string
+    protected function tag(): string
     {
-        return 'rooms';
+        return CacheTags::ROOMS;
     }
 }

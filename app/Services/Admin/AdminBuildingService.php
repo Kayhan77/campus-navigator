@@ -4,41 +4,45 @@ namespace App\Services\Admin;
 
 use App\DTOs\Building\CreateBuildingDTO;
 use App\DTOs\Building\UpdateBuildingDTO;
-use App\Exceptions\ApiException;
 use App\Models\Building;
+use App\Services\BuildingService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
+/**
+ * @deprecated Merged into BuildingService.
+ *
+ * This class delegates every call to BuildingService and exists only to
+ * avoid breaking any code that may still reference it during transition.
+ * Migrate callers to BuildingService directly and remove this file.
+ */
 class AdminBuildingService
 {
+    public function __construct(
+        private readonly BuildingService $service
+    ) {}
+
     public function listBuildings(int $perPage = 15): LengthAwarePaginator
     {
-        return Building::withCount('rooms')->latest()->paginate($perPage);
+        return $this->service->listAdminPaginated($perPage);
     }
 
     public function create(CreateBuildingDTO $dto): Building
     {
-        return Building::create($dto->toArray());
+        return $this->service->create($dto);
     }
 
     public function update(Building $building, UpdateBuildingDTO $dto): Building
     {
-        $building->update($dto->toArray());
-        return $building->fresh();
+        return $this->service->update($building, $dto);
     }
 
     public function delete(Building $building): void
     {
-        $building->delete();
+        $this->service->delete($building);
     }
 
     public function find(int $id): Building
     {
-        $building = Building::find($id);
-
-        if (!$building) {
-            throw new ApiException('Building not found.', 404);
-        }
-
-        return $building;
+        return Building::findOrFail($id);
     }
 }

@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Search;
 
+use App\Enums\UserRole;
 use App\Filters\QueryFilter;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -136,6 +139,26 @@ class SearchCacheService
         ]));
     }
 
+    /**
+     * Build a stable cache key for non-paginated, non-filtered queries
+     * (e.g. calendar views, upcoming-event windows, dashboard stats).
+     *
+     * $params should describe every dimension that makes the result unique
+     * (e.g. ['range' => '24h'], ['view' => 'calendar'], ['user_id' => 5]).
+     * Keys are sorted before hashing so parameter order never matters.
+     *
+     * Prefix is 'cache:' to distinguish from 'search:' paged results.
+     */
+    public static function buildSimpleKey(string $model, array $params = []): string
+    {
+        ksort($params);
+
+        return 'cache:' . hash('sha256', json_encode([
+            'model'  => $model,
+            'params' => $params,
+        ]));
+    }
+
     // =========================================================================
     // Internal helpers
     // =========================================================================
@@ -191,6 +214,6 @@ class SearchCacheService
 
         $user = request()->user();
 
-        return $user && $user->isAdmin();
+        return $user && $user->hasAnyRole(UserRole::adminRoles());
     }
 }

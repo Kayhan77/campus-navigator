@@ -2,11 +2,14 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\Event;
+use App\Models\User;
+use App\Policies\Concerns\AuthorizesByRole;
 
 class EventPolicy
 {
+    use AuthorizesByRole;
+
     /**
      * Determine if the user can view any events.
      */
@@ -20,7 +23,7 @@ class EventPolicy
      */
     public function create(User $user): bool
     {
-        return $user->isAdmin();
+        return $this->canManageContent($user);
     }
 
     /**
@@ -28,7 +31,7 @@ class EventPolicy
      */
     public function update(User $user, Event $event): bool
     {
-        return $user->isAdmin();
+        return $this->canManageContent($user);
     }
 
     /**
@@ -36,6 +39,6 @@ class EventPolicy
      */
     public function delete(User $user, Event $event): bool
     {
-        return $user->isAdmin();
+        return $this->canManageContent($user);
     }
 }

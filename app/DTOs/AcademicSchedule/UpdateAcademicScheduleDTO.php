@@ -1,31 +1,42 @@
 <?php
+
+declare(strict_types=1);
+
 namespace App\DTOs\AcademicSchedule;
 
-class UpdateAcademicScheduleDTO
-{
-    public ?string $course_name;
-    public ?string $day;
-    public ?string $start_time;
-    public ?string $end_time;
-    public ?int $room_id;
+use App\Http\Requests\AcademicSchedule\UpdateAcademicScheduleRequest;
 
-    public function __construct(array $data)
+final class UpdateAcademicScheduleDTO
+{
+    public function __construct(
+        public readonly ?string $course_name,
+        public readonly ?string $day,
+        public readonly ?string $start_time,
+        public readonly ?string $end_time,
+        public readonly ?int    $room_id,
+    ) {}
+
+    public static function fromRequest(UpdateAcademicScheduleRequest $request): self
     {
-        $this->course_name = $data['course_name'] ?? null;
-        $this->day = $data['day'] ?? null;
-        $this->start_time = $data['start_time'] ?? null;
-        $this->end_time = $data['end_time'] ?? null;
-        $this->room_id = $data['room_id'] ?? null;
+        $validated = $request->validated();
+
+        return new self(
+            course_name: $validated['course_name'] ?? null,
+            day:         $validated['day'] ?? null,
+            start_time:  $validated['start_time'] ?? null,
+            end_time:    $validated['end_time'] ?? null,
+            room_id:     isset($validated['room_id']) ? (int) $validated['room_id'] : null,
+        );
     }
 
     public function toArray(): array
     {
         return array_filter([
             'course_name' => $this->course_name,
-            'day' => $this->day,
-            'start_time' => $this->start_time,
-            'end_time' => $this->end_time,
-            'room_id' => $this->room_id,
-        ], fn($value) => $value !== null);
+            'day'         => $this->day,
+            'start_time'  => $this->start_time,
+            'end_time'    => $this->end_time,
+            'room_id'     => $this->room_id,
+        ], fn(mixed $value): bool => $value !== null);
     }
 }

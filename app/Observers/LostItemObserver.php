@@ -1,11 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Observers;
 
-class LostItemObserver extends BaseSearchObserver
+use App\Services\Cache\CacheTags;
+
+final class LostItemObserver extends BaseModelObserver
 {
-    protected function modelTag(): string
+    protected function tag(): string
     {
-        return 'lost_items';
+        return CacheTags::LOST_ITEMS;
     }
 }
