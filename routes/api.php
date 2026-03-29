@@ -23,6 +23,15 @@ use App\Http\Controllers\Api\V1\GlobalSearchController;
 use App\Http\Controllers\Api\V1\RoomSearchController;
 use Illuminate\Support\Facades\Route;
 
+// Health check endpoint for Render
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'timestamp' => now()->toISOString(),
+        'service' => 'Campus Navigator API'
+    ]);
+});
+
 // --- Public routes ---
 Route::prefix('v1')->group(function () {
 

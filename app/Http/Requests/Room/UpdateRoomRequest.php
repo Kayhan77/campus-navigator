@@ -16,7 +16,9 @@ class UpdateRoomRequest extends FormRequest
         return [
             'building_id' => 'sometimes|exists:buildings,id',
             'room_number' => 'sometimes|string|max:50',
-            'floor' => 'nullable|integer',
+            'floor'       => 'sometimes|nullable|integer',
+            'capacity'    => 'sometimes|integer|min:1',
+            'type'        => 'sometimes|string|max:100',
         ];
     }
 }

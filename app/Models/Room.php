@@ -14,7 +14,7 @@ class Room extends Model
     /** Relations the client may request via ?include=building */
     protected array $allowedIncludes = ['building'];
 
-    protected $fillable = ['building_id', 'room_number', 'floor'];
+    protected $fillable = ['building_id', 'room_number', 'floor', 'capacity', 'type'];
 
     public function building(): belongsTo
     {

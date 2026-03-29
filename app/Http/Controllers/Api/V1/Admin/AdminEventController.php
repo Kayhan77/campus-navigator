@@ -10,43 +10,44 @@ use App\Http\Requests\Event\EventRequest;
 use App\Http\Requests\Event\UpdateEventRequest;
 use App\Http\Resources\Api\V1\EventResource;
 use App\Models\Event;
-use App\Services\Admin\AdminEventService;
+use App\Services\Event\EventService;
 
 class AdminEventController extends Controller
 {
     public function __construct(
-        private AdminEventService $service
+        private readonly EventService $service
     ) {}
 
     public function index()
     {
-        $events = $this->service->listEvents()
-            ->through(fn($event) => new EventResource($event));
+        $events = $this->service->listAdminPaginated()
+            ->through(fn ($event) => new EventResource($event));
 
         return ApiResponse::paginated($events, 'Events retrieved successfully.');
     }
 
+    public function show(Event $event)
+    {
+        return ApiResponse::success(
+            new EventResource($this->service->getById($event)),
+            'Event retrieved successfully.'
+        );
+    }
+
     public function store(EventRequest $request)
     {
-        $dto   = new CreateEventDTO($request->validated());
+        $dto   = CreateEventDTO::fromRequest($request);
         $event = $this->service->create($dto, $request->user()->id);
 
-        return ApiResponse::success(
-            new EventResource($event),
-            'Event created successfully.',
-            201
-        );
+        return ApiResponse::success(new EventResource($event), 'Event created successfully.', 201);
     }
 
     public function update(UpdateEventRequest $request, Event $event)
     {
-        $dto     = new UpdateEventDTO($request->validated());
+        $dto     = UpdateEventDTO::fromRequest($request);
         $updated = $this->service->update($event, $dto);
 
-        return ApiResponse::success(
-            new EventResource($updated),
-            'Event updated successfully.'
-        );
+        return ApiResponse::success(new EventResource($updated), 'Event updated successfully.');
     }
 
     public function destroy(Event $event)

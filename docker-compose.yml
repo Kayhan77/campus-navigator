@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  # Laravel API Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "10000:10000"
+    environment:
+      - APP_NAME=Campus Navigator API
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - APP_KEY=base64:your_app_key_here
+      - APP_URL=http://localhost:10000
+
+      - LOG_CHANNEL=stack
+      - LOG_LEVEL=debug
+
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=campus_navigator
+      - DB_USERNAME=root
+      - DB_PASSWORD=password
+
+      - CACHE_STORE=redis
+      - QUEUE_CONNECTION=redis
+      - SESSION_DRIVER=redis
+
+      - REDIS_HOST=redis
+      - REDIS_PASSWORD=null
+      - REDIS_PORT=6379
+
+      - JWT_SECRET=your_jwt_secret_here
+      - JWT_TTL=60
+
+      - RUN_MIGRATIONS=true
+    volumes:
+      - .:/var/www/html
+      - ./storage:/var/www/html/storage
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - campus-network
+
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_DATABASE=campus_navigator
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_PASSWORD=password
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - campus-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - redis-data:/data
+    networks:
+      - campus-network
+
+volumes:
+  db-data:
+    driver: local
+  redis-data:
+    driver: local
+
+networks:
+  campus-network:
+    driver: bridge

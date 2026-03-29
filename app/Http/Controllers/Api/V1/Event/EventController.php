@@ -38,26 +38,26 @@ class EventController extends Controller
         );
     }
 
-    // public function store(EventRequest $request)
-    // {
-    //     $this->authorize('create', Event::class);
-    //     $dto   = new CreateEventDTO($request->validated());
-    //     $event = $this->service->create($dto, $request->user()->id);
-    //     return ApiResponse::success(new EventResource($event), 'Event created successfully.', 201);
-    // }
+    public function store(EventRequest $request)
+    {
+        $this->authorize('create', Event::class);
+        $dto   = CreateEventDTO::fromRequest($request);
+        $event = $this->service->create($dto, $request->user()->id);
+        return ApiResponse::success(new EventResource($event), 'Event created successfully.', 201);
+    }
 
-    // public function update(UpdateEventRequest $request, Event $event)
-    // {
-    //     $this->authorize('update', $event);
-    //     $dto     = new UpdateEventDTO($request->validated());
-    //     $updated = $this->service->update($event, $dto);
-    //     return ApiResponse::success(new EventResource($updated), 'Event updated successfully.');
-    // }
+    public function update(UpdateEventRequest $request, Event $event)
+    {
+        $this->authorize('update', $event);
+        $dto     = UpdateEventDTO::fromRequest($request);
+        $updated = $this->service->update($event, $dto);
+        return ApiResponse::success(new EventResource($updated), 'Event updated successfully.');
+    }
 
-    // public function destroy(Event $event)
-    // {
-    //     $this->authorize('delete', $event);
-    //     $this->service->delete($event);
-    //     return ApiResponse::success(null, 'Event deleted successfully.');
-    // }
+    public function destroy(Event $event)
+    {
+        $this->authorize('delete', $event);
+        $this->service->delete($event);
+        return ApiResponse::success(null, 'Event deleted successfully.');
+    }
 }

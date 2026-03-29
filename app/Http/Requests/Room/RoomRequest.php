@@ -16,7 +16,9 @@ class RoomRequest extends FormRequest
         return [
             'building_id' => 'required|exists:buildings,id',
             'room_number' => 'required|string|max:50',
-            'floor' => 'nullable|integer',
+            'floor'       => 'nullable|integer',
+            'capacity'    => 'required|integer|min:1',
+            'type'        => 'required|string|max:100',
         ];
     }
 }
