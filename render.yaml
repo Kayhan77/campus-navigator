@@ -1,7 +1,7 @@
 services:
   # Web Service (API Backend)
   - type: web
-    name: campus-navigator-api
+    name: campus-navigator
     runtime: docker
     plan: free # Change to 'starter' or higher for production
     region: oregon # Choose closest region to your users
@@ -78,11 +78,11 @@ services:
           type: redis
           property: host
 
-      - key: REDIS_PASSWORD
+      - key: REDIS_URL
         fromService:
           name: campus-navigator-redis
           type: redis
-          property: password
+          property: connectionString
 
       - key: REDIS_PORT
         value: 6379
