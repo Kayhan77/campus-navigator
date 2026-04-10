@@ -27,7 +27,7 @@ services:
         generateValue: true
 
       - key: APP_URL
-        value: https://campus-navigator.onrender.com
+        value: https://campus-navigator-renk.onrender.com
 
       - key: LOG_CHANNEL
         value: stdout
@@ -66,13 +66,13 @@ services:
 
       # REDIS
       - key: CACHE_DRIVER
-        value: redis
+        value: file
 
       - key: SESSION_DRIVER
-        value: redis
+        value: file
 
       - key: QUEUE_CONNECTION
-        value: redis
+        value: sync
 
       - key: REDIS_HOST
         fromService:

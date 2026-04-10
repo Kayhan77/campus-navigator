@@ -24,7 +24,7 @@ use App\Http\Controllers\Api\V1\RoomSearchController;
 use Illuminate\Support\Facades\Route;
 
 // Health check endpoint for Render
-Route::get('/health', function () {
+Route::get('/api/health', function () {
     return response()->json([
         'status' => 'ok',
         'timestamp' => now()->toISOString(),
