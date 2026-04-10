@@ -64,4 +64,4 @@ EXPOSE 10000
 ENTRYPOINT ["docker-entrypoint.sh"]
 
 # Start Laravel development server (suitable for small to medium traffic)
-CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=10000
+CMD ["sh", "-c", "sleep 10 && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=10000"]
