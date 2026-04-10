@@ -50,4 +50,4 @@ RUN chmod -R 775 storage bootstrap/cache
 EXPOSE 10000
 
 # IMPORTANT: single stable process (NO &, NO entrypoint)
-CMD ["sh", "-c", "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=10000"]
+CMD ["sh", "-c", "--force && php artisan serve --host=0.0.0.0 --port=10000"]
