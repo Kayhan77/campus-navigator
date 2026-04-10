@@ -18,13 +18,13 @@ services:
       - key: APP_DEBUG
         value: false
 
-      - key: APP_KEY
-        generateValue: true
-
       - key: APP_URL
         value: https://campus-navigator-renk.onrender.com
 
-      # DB
+      - key: APP_KEY
+        generateValue: true
+
+      # DATABASE
       - key: DB_CONNECTION
         value: mysql
 
@@ -53,17 +53,16 @@ services:
           name: campus-navigator-db
           property: password
 
-      # CACHE (safe mode first)
+      # REDIS (FULL FIXED VERSION)
       - key: CACHE_DRIVER
-        value: file
+        value: redis
 
       - key: SESSION_DRIVER
-        value: file
+        value: redis
 
       - key: QUEUE_CONNECTION
-        value: sync
+        value: redis
 
-      # Redis (add AFTER deployment works)
       - key: REDIS_HOST
         fromService:
           name: campus-navigator-redis
@@ -71,13 +70,23 @@ services:
           property: host
 
       - key: REDIS_PORT
-        value: 6379
+        fromService:
+          name: campus-navigator-redis
+          type: redis
+          property: port
 
       - key: REDIS_URL
         fromService:
           name: campus-navigator-redis
           type: redis
           property: connectionString
+
+      # JWT
+      - key: JWT_SECRET
+        generateValue: true
+
+      - key: JWT_TTL
+        value: 60
 
 databases:
   - name: campus-navigator-db
@@ -90,4 +99,4 @@ services:
     plan: free
     ipAllowList:
       - source: 0.0.0.0/0
-        description: allow all
+        description: allow-all
