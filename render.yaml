@@ -1,16 +1,19 @@
 services:
-  # Web Service (API Backend)
   - type: web
     name: campus-navigator
-    runtime: docker
-    plan: free # Change to 'starter' or higher for production
-    region: oregon # Choose closest region to your users
-    branch: main # Git branch to deploy
+    runtime: php
+    plan: free
+    region: oregon
+    branch: main
 
-    # Health check endpoint
     healthCheckPath: /api/health
 
-    # Environment variables
+    buildCommand: |
+      composer install --no-dev --optimize-autoloader
+      php artisan key:generate
+
+    startCommand: php artisan serve --host=0.0.0.0 --port=$PORT
+
     envVars:
       - key: APP_NAME
         value: Campus Navigator API
@@ -22,10 +25,10 @@ services:
         value: false
 
       - key: APP_KEY
-        generateValue: true # Render will generate this
+        generateValue: true
 
       - key: APP_URL
-        value: https://campus-navigator-api.onrender.com # Update with your actual URL
+        value: https://campus-navigator.onrender.com
 
       - key: LOG_CHANNEL
         value: stdout
@@ -33,10 +36,10 @@ services:
       - key: LOG_LEVEL
         value: error
 
+      # DATABASE
       - key: DB_CONNECTION
-        value: mysql # or pgsql
+        value: mysql
 
-      # Link these to your Render database
       - key: DB_HOST
         fromDatabase:
           name: campus-navigator-db
@@ -62,61 +65,55 @@ services:
           name: campus-navigator-db
           property: password
 
-      - key: CACHE_STORE
-        value: redis
-
-      - key: QUEUE_CONNECTION
+      # REDIS
+      - key: CACHE_DRIVER
         value: redis
 
       - key: SESSION_DRIVER
         value: redis
 
-      # Link to Render Redis
+      - key: QUEUE_CONNECTION
+        value: redis
+
       - key: REDIS_HOST
         fromService:
           name: campus-navigator-redis
           type: redis
           property: host
 
-      - key: REDIS_URL
+      - key: REDIS_PORT
         fromService:
           name: campus-navigator-redis
           type: redis
-          property: connectionString
+          property: port
 
-      - key: REDIS_PORT
-        value: 6379
+      - key: REDIS_PASSWORD
+        fromService:
+          name: campus-navigator-redis
+          type: redis
+          property: password
 
-      # JWT Configuration
+      # JWT
       - key: JWT_SECRET
         generateValue: true
 
       - key: JWT_TTL
         value: 60
 
-      # Firebase - Add your credentials as secret files or env vars
-      - key: FIREBASE_CREDENTIALS
-        sync: false # Set manually in dashboard
-
-      # Optional: Run migrations on deploy
-      - key: RUN_MIGRATIONS
-        value: true
-
-      # CORS settings
+      # CORS
       - key: SANCTUM_STATEFUL_DOMAINS
         value: localhost,127.0.0.1
 
       - key: SESSION_DOMAIN
         value: .onrender.com
 
-# Optional: Database (uncomment if you want Render-managed database)
-# databases:
-#   - name: campus-navigator-db
-#     databaseName: campus_navigator
-#     plan: free # or starter for production
+  # REDIS SERVICE 
+  - type: redis
+    name: campus-navigator-redis
+    plan: free
 
-# Optional: Redis (uncomment if you want Render-managed Redis)
-# - type: redis
-#   name: campus-navigator-redis
-#   plan: free
-#   maxmemoryPolicy: allkeys-lru
+# DATABASE 
+databases:
+  - name: campus-navigator-db
+    databaseName: campus_navigator
+    plan: free
