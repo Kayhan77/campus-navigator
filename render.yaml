@@ -1,7 +1,7 @@
 services:
   - type: web
     name: campus-navigator
-    runtime: php
+    runtime: docker
     plan: free
     region: oregon
     branch: main
@@ -87,11 +87,11 @@ services:
           type: redis
           property: port
 
-      - key: REDIS_PASSWORD
+      - key: REDIS_URL
         fromService:
           name: campus-navigator-redis
           type: redis
-          property: password
+          property: connectionString
 
       # JWT
       - key: JWT_SECRET
@@ -117,3 +117,4 @@ databases:
   - name: campus-navigator-db
     databaseName: campus_navigator
     plan: free
+    ipAllowList: []
