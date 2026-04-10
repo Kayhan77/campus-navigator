@@ -8,14 +8,9 @@ services:
 
     healthCheckPath: /api/health
 
-    buildCommand: |
-      composer install --no-dev --optimize-autoloader
-      php artisan key:generate
-
-
     envVars:
       - key: APP_NAME
-        value: Campus Navigator API
+        value: Campus Navigator
 
       - key: APP_ENV
         value: production
@@ -29,13 +24,7 @@ services:
       - key: APP_URL
         value: https://campus-navigator-renk.onrender.com
 
-      - key: LOG_CHANNEL
-        value: stdout
-
-      - key: LOG_LEVEL
-        value: error
-
-      # DATABASE
+      # DB
       - key: DB_CONNECTION
         value: mysql
 
@@ -64,7 +53,7 @@ services:
           name: campus-navigator-db
           property: password
 
-      # REDIS
+      # CACHE (safe mode first)
       - key: CACHE_DRIVER
         value: file
 
@@ -74,6 +63,7 @@ services:
       - key: QUEUE_CONNECTION
         value: sync
 
+      # Redis (add AFTER deployment works)
       - key: REDIS_HOST
         fromService:
           name: campus-navigator-redis
@@ -81,10 +71,7 @@ services:
           property: host
 
       - key: REDIS_PORT
-        fromService:
-          name: campus-navigator-redis
-          type: redis
-          property: port
+        value: 6379
 
       - key: REDIS_URL
         fromService:
@@ -92,29 +79,15 @@ services:
           type: redis
           property: connectionString
 
-      # JWT
-      - key: JWT_SECRET
-        generateValue: true
-
-      - key: JWT_TTL
-        value: 60
-
-      # CORS
-      - key: SANCTUM_STATEFUL_DOMAINS
-        value: localhost,127.0.0.1
-
-      - key: SESSION_DOMAIN
-        value: .onrender.com
-
-  # REDIS SERVICE 
-  - type: redis
-    name: campus-navigator-redis
-    plan: free
-    ipAllowList: []
-
-# DATABASE 
 databases:
   - name: campus-navigator-db
     databaseName: campus_navigator
     plan: free
-    ipAllowList: []
+
+services:
+  - type: redis
+    name: campus-navigator-redis
+    plan: free
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: allow all
