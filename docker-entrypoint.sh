@@ -32,6 +32,11 @@ if [ "$RUN_MIGRATIONS" = "true" ]; then
     php artisan migrate --force --no-interaction
 fi
 
+if [ "$RUN_SEEDERS" = "true" ]; then
+    echo "🌱 Running database seeders..."
+    php artisan db:seed --force --no-interaction
+fi
+
 # Cache configuration for better performance
 echo "⚡ Optimizing application..."
 php artisan config:cache
