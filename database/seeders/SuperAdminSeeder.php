@@ -10,7 +10,8 @@ class SuperAdminSeeder extends Seeder
 {
     public function run(): void
     {
-        $email = env('SUPER_ADMIN_EMAIL', 'superadmin@campus.local');
+        $this->command->info("🔥 SuperAdminSeeder is running...");
+        $email = env('SUPER_ADMIN_EMAIL', 'test0test12034@gmail.com');
 
         if (User::where('email', $email)->exists()) {
             $this->command->warn("Super admin [{$email}] already exists. Skipping.");
