@@ -40,11 +40,7 @@ class PreRegisterService
             'last_sent_at' => now(),
         ]);
 
-        try {
-            $pending->notify(new VerifyEmailNotification($otp));
-        } catch (\Throwable $e) {
-            logger()->error('OTP send failed: ' . $e->getMessage());
-        }
+        logger("OTP: " . $otp);
 
         return $pending;
     }
@@ -133,11 +129,7 @@ class PreRegisterService
             ]
         );
 
-        try {
-            $pending->notify(new VerifyEmailNotification($otp));
-        } catch (\Throwable $e) {
-            logger()->error('OTP send failed: ' . $e->getMessage());
-        }
+        logger("OTP: " . $otp);
 
         return $pending;
     }
