@@ -1,3 +1,6 @@
+#!/bin/sh
+set -e
+
 echo "🚀 Starting Laravel application..."
 
 echo "📁 Setting up permissions..."
