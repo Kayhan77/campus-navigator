@@ -100,7 +100,7 @@ Route::middleware(['auth:api', 'admin'])->prefix('v1/admin')->group(function () 
 
     // Event management
     Route::get('/events',              [AdminEventController::class, 'index']);
-    Route::get('/events/{event}',       [AdminEventController::class, 'show']);
+    Route::get('/events/{event}',      [AdminEventController::class, 'show']);
     Route::post('/events',             [AdminEventController::class, 'store']);
     Route::put('/events/{event}',      [AdminEventController::class, 'update']);
     Route::delete('/events/{event}',   [AdminEventController::class, 'destroy']);
