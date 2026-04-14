@@ -19,11 +19,11 @@ if [ -n "$DB_HOST" ]; then
     done
 fi
 
-echo "🔄 Running migrations..."
-php artisan migrate --force --no-interaction
+# echo "🔄 Running migrations..."
+# php artisan migrate --force --no-interaction
 
-echo "🌱 Running Super Admin Seeder..."
-php artisan db:seed --class=SuperAdminSeeder --force --no-interaction
+# echo "🌱 Running Super Admin Seeder..."
+# php artisan db:seed --class=SuperAdminSeeder --force --no-interaction
 
 echo "⚡ Clearing caches..."
 php artisan optimize:clear
