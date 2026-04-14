@@ -1,14 +1,10 @@
-#!/bin/sh
-set -e
-
 echo "🚀 Starting Laravel application..."
 
-# Ensure proper permissions
 echo "📁 Setting up permissions..."
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Wait for database to be ready (optional, but helpful)
+# DB wait
 if [ -n "$DB_HOST" ]; then
     echo "⏳ Waiting for database connection..."
     timeout=60
@@ -18,44 +14,21 @@ if [ -n "$DB_HOST" ]; then
         sleep 2
         elapsed=$((elapsed + 2))
     done
-
-    if [ $elapsed -eq $timeout ]; then
-        echo "⚠️  Database connection timeout - continuing anyway..."
-    else
-        echo "✅ Database is ready!"
-    fi
 fi
 
-# Run migrations (only in production with caution)
-if [ "$RUN_MIGRATIONS" = "true" ]; then
-    echo "🔄 Running database migrations..."
-    php artisan migrate --force --no-interaction
-fi
+echo "🔄 Running migrations..."
+php artisan migrate --force --no-interaction
 
-if [ "$RUN_SEEDERS" = "true" ]; then
-    echo "🌱 Running database seeders..."
-    php artisan db:seed --force --no-interaction
-fi
+echo "🌱 Running Super Admin Seeder..."
+php artisan db:seed --class=SuperAdminSeeder --force --no-interaction
 
-# Cache configuration for better performance
-echo "⚡ Optimizing application..."
+echo "⚡ Clearing caches..."
+php artisan optimize:clear
+
+echo "⚡ Optimizing..."
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-# Generate JWT secret if not exists (for jwt-auth)
-if ! php artisan jwt:secret --show 2>/dev/null; then
-    echo "🔑 Generating JWT secret..."
-    php artisan jwt:secret --force
-fi
-
-# Clear any previous caches
-php artisan optimize:clear
-
-# Final optimization
-php artisan optimize
-
-echo "✅ Application ready!"
-
-# Execute the main command
-exec "$@"
+echo "🌐 Starting server..."
+exec php artisan serve --host=0.0.0.0 --port=10000
