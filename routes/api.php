@@ -24,7 +24,19 @@ use App\Http\Controllers\Api\V1\RoomSearchController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Mail;
 
+Route::get('/test-connection', function () {
+    try {
+        $fp = fsockopen('smtp.gmail.com', 587, $errno, $errstr, 10);
 
+        if (!$fp) {
+            return "Connection failed: $errstr ($errno)";
+        }
+
+        return "Connected successfully!";
+    } catch (\Exception $e) {
+        return $e->getMessage();
+    }
+});
 Route::get('/test-mail', function () {
     Mail::raw('Test email', function ($msg) {
         $msg->to('forreplit121@email.com')
