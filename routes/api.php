@@ -23,7 +23,6 @@ use App\Http\Controllers\Api\V1\GlobalSearchController;
 use App\Http\Controllers\Api\V1\RoomSearchController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Http\Request;
 
 
 Route::get('/test-mail', function () {
@@ -45,62 +44,31 @@ Route::get('/health', function () {
 });
 
 // Debug: Clean up pending registrations and verification OTPs
-Route::post('/debug/clean-registrations', function (Request $request) {
-    // Security check: only allow in non-production or with valid debug key
-    if (config('app.env') === 'production') {
-        $debugKey = $request->query('key');
-        $expectedKey = config('app.debug_key'); // Set this in .env as DEBUG_KEY=your-secret-key
-
-        if (!$debugKey || $debugKey !== $expectedKey) {
-            return response()->json([
-                'error' => 'Unauthorized. Production environment requires valid debug key.',
-                'status' => 'failed'
-            ], 403);
-        }
-    }
-
-    // Check if debug mode is enabled (optional double-check)
-    if (!config('app.debug') && config('app.env') === 'production') {
-        return response()->json([
-            'error' => 'Debug operations not allowed in production with debug disabled.',
-            'status' => 'failed'
-        ], 403);
-    }
-
+Route::post('/debug/clean-registrations', function () {
     try {
         $cleanedTables = [];
 
         // Truncate pending_registrations
         $pendingCount = \App\Models\PendingRegistration::count();
         \App\Models\PendingRegistration::truncate();
-        $cleanedTables['pending_registrations'] = [
-            'records_deleted' => $pendingCount,
-            'status' => 'cleaned'
-        ];
+        $cleanedTables['pending_registrations'] = $pendingCount;
 
         // Truncate email_verification_otps
         $otpCount = \App\Models\EmailVerificationOtp::count();
         \App\Models\EmailVerificationOtp::truncate();
-        $cleanedTables['email_verification_otps'] = [
-            'records_deleted' => $otpCount,
-            'status' => 'cleaned'
-        ];
+        $cleanedTables['email_verification_otps'] = $otpCount;
 
         return response()->json([
             'message' => 'Database cleaned successfully',
-            'status' => 'success',
-            'cleaned_tables' => $cleanedTables,
-            'timestamp' => now()->toIso8601String()
-        ], 200);
+            'cleaned_tables' => $cleanedTables
+        ]);
 
     } catch (\Exception $e) {
         return response()->json([
-            'error' => 'Failed to clean database',
-            'message' => $e->getMessage(),
-            'status' => 'failed'
+            'error' => $e->getMessage()
         ], 500);
     }
-})->name('debug.clean-registrations');
+});
 
 // --- Public routes ---
 Route::prefix('v1')->group(function () {
