@@ -27,7 +27,7 @@ use Illuminate\Support\Facades\Mail;
 
 Route::get('/test-mail', function () {
     Mail::raw('Test email', function ($msg) {
-        $msg->to('your@email.com')
+        $msg->to('forreplit121@email.com')
             ->subject('Test');
     });
 
