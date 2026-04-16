@@ -2,16 +2,12 @@
 
 namespace App\Notifications;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Config;
 
-class VerifyEmailNotification extends Notification implements ShouldQueue
+class VerifyEmailNotification extends Notification
 {
-    use Queueable;
-
     public function __construct(public string $code)
     {
     }
@@ -28,9 +24,9 @@ class VerifyEmailNotification extends Notification implements ShouldQueue
             ->greeting('Hello ' . ($notifiable->name ?? 'User') . ',')
             ->line('Thank you for registering.')
             ->line('Your verification code is:')
-            ->line("**{$this->code}**")
+            ->line($this->code) // ← removed markdown (**)
             ->line('This code will expire in 10 minutes.')
             ->line('If you did not create an account, no further action is required.')
-            ->salutation('Regards, ' . Config::get('app.name'));
+            ->salutation('Regards, ' . config('app.name'));
     }
 }
