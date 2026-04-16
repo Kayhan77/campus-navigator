@@ -23,6 +23,8 @@ use App\Http\Controllers\Api\V1\GlobalSearchController;
 use App\Http\Controllers\Api\V1\RoomSearchController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Mail;
+use App\Http\Controllers\Auth\GoogleController;
+
 
 Route::get('/test-connection', function () {
     try {
@@ -85,6 +87,8 @@ Route::post('/debug/clean-registrations', function () {
 // --- Public routes ---
 Route::prefix('v1')->group(function () {
 
+    Route::get('/auth/google', [GoogleController::class, 'redirect']);
+    Route::get('/auth/google/callback', [GoogleController::class, 'callback']);
     Route::post('/pre-register', [PreRegisterController::class, 'register']);
     Route::post('/verify-otp',   [PreRegisterController::class, 'verify']);
     Route::post('/resend-otp',   [PreRegisterController::class, 'resend'])->middleware('throttle:5,1');
@@ -171,7 +175,7 @@ Route::middleware(['auth:api', 'admin'])->prefix('v1/admin')->group(function () 
 
     // Academic schedule management
     Route::get('/schedule',                        [AdminAcademicScheduleController::class, 'index']);
-    Route::get('/schedule/{academicSchedule}',     [AdminAcademicScheduleController::class, 'show']);
+    Route::get('/schedule/{academicSchedule}',       [AdminAcademicScheduleController::class, 'show']);
     Route::post('/schedule',                       [AdminAcademicScheduleController::class, 'store']);
     Route::put('/schedule/{academicSchedule}',     [AdminAcademicScheduleController::class, 'update']);
     Route::delete('/schedule/{academicSchedule}',  [AdminAcademicScheduleController::class, 'destroy']);
