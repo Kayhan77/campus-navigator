@@ -5,11 +5,10 @@ namespace App\Services\Auth;
 use App\DTOs\Auth\SendResetOtpDTO;
 use App\DTOs\Auth\VerifyResetOtpDTO;
 use App\Exceptions\ApiException;
-use App\Mail\PasswordResetOtpMail;
 use App\Models\PasswordResetOtp;
 use App\Models\User;
+use App\Notifications\PasswordResetOtpNotification;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
 
 class PasswordResetOtpService
 {
@@ -48,9 +47,7 @@ class PasswordResetOtpService
             ]
         );
 
-        Mail::to($dto->email)->send(
-            new PasswordResetOtpMail($otp, $user->name)
-        );
+        $user->notify(new PasswordResetOtpNotification($otp));
     }
 
     public function verifyOtpAndResetPassword(VerifyResetOtpDTO $dto): void
