@@ -11,7 +11,7 @@ class GoogleController extends Controller
 {
     public function redirect()
     {
-        $url = Socialite::driver('google')->stateless()->redirect()->getTargetUrl();
+        $url = Socialite::driver('google')->redirect()->getTargetUrl();
 
         return response()->json([
             'authorization_url' => $url
@@ -29,7 +29,7 @@ class GoogleController extends Controller
                 ], 400);
             }
 
-            $googleUser = Socialite::driver('google')->stateless()->user();
+            $googleUser = Socialite::driver('google')->user();
 
             $user = User::updateOrCreate(
                 ['email' => $googleUser->getEmail()],
