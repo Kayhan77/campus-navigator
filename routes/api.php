@@ -89,6 +89,8 @@ Route::prefix('v1')->group(function () {
 
     Route::get('/auth/google', [GoogleController::class, 'redirect']);
     Route::get('/auth/google/callback', [GoogleController::class, 'callback']);
+
+    
     Route::post('/pre-register', [PreRegisterController::class, 'register']);
     Route::post('/verify-otp',   [PreRegisterController::class, 'verify']);
     Route::post('/resend-otp',   [PreRegisterController::class, 'resend'])->middleware('throttle:5,1');
