@@ -2,18 +2,13 @@
 
 namespace App\Mail;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Config;
 
-class PasswordResetOtpMail extends Mailable implements ShouldQueue
+class PasswordResetOtpMail extends Mailable
 {
-    use Queueable, SerializesModels;
-
     public function __construct(
         public readonly string $otp,
         public readonly string $recipientName,
@@ -22,7 +17,7 @@ class PasswordResetOtpMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Your Password Reset Code – ' . Config::get('app.name'),
+            subject: 'Your Password Reset Code – ' . config('app.name'),
         );
     }
 
@@ -33,7 +28,7 @@ class PasswordResetOtpMail extends Mailable implements ShouldQueue
             with: [
                 'otp'           => $this->otp,
                 'recipientName' => $this->recipientName,
-                'appName'       => Config::get('app.name'),
+                'appName'       => config('app.name'),
                 'expiresIn'     => 10,
             ],
         );

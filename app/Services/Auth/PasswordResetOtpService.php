@@ -48,7 +48,7 @@ class PasswordResetOtpService
             ]
         );
 
-        Mail::to($dto->email)->queue(
+        Mail::to($dto->email)->send(
             new PasswordResetOtpMail($otp, $user->name)
         );
     }
