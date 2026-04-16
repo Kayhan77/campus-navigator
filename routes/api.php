@@ -23,7 +23,7 @@ use App\Http\Controllers\Api\V1\GlobalSearchController;
 use App\Http\Controllers\Api\V1\RoomSearchController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Mail;
-use App\Http\Controllers\Auth\GoogleController;
+use App\Http\Controllers\Api\V1\Auth\GoogleController;
 
 
 Route::get('/test-connection', function () {
