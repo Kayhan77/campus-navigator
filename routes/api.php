@@ -194,7 +194,7 @@ Route::middleware(['auth:api', 'admin'])->prefix('v1/admin')->group(function () 
 
     // Announcement management
     Route::apiResource('announcements', AdminAnnouncementController::class);
-
+    
     // News management
     Route::apiResource('news', AdminNewsController::class);
 
