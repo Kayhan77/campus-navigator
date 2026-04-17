@@ -5,9 +5,11 @@ use App\Http\Controllers\Api\V1\Admin\AdminAcademicScheduleController;
 use App\Http\Controllers\Api\V1\Admin\AdminBuildingController;
 use App\Http\Controllers\Api\V1\Admin\AdminDashboardController;
 use App\Http\Controllers\Api\V1\Admin\AdminEventController;
+use App\Http\Controllers\Api\V1\Admin\AdminNewsController;
+use App\Http\Controllers\Api\V1\Admin\AdminAnnouncementController;
 use App\Http\Controllers\Api\V1\Admin\AdminRoomController;
 use App\Http\Controllers\Api\V1\Admin\AdminUserController;
-use App\Http\Controllers\Api\V1\Admin\AnnouncementController;
+use App\Http\Controllers\Api\V1\AnnouncementController;
 use App\Http\Controllers\Api\V1\Auth\JwtAuthController;
 use App\Http\Controllers\Api\V1\Auth\NewPasswordOtpController;
 use App\Http\Controllers\Api\V1\Auth\PasswordResetOtpController;
@@ -112,6 +114,12 @@ Route::prefix('v1')->group(function () {
     Route::get('/events/{event}',    [EventController::class, 'show']);
     Route::get('/calendar/events',   [EventCalendarController::class, 'index']);
 
+    Route::get('/news',              [NewsController::class, 'index']);
+    Route::get('/news/{news}',       [NewsController::class, 'show']);
+
+    Route::get('/announcements',         [AnnouncementController::class, 'index']);
+    Route::get('/announcements/{announcement}', [AnnouncementController::class, 'show']);
+
     Route::get('/schedule',              [AcademicScheduleController::class, 'index']);
     Route::get('/schedule/{academicSchedule}', [AcademicScheduleController::class, 'show']);
 
@@ -143,9 +151,6 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
     Route::get('/notification-preferences',    [NotificationPreferencesController::class, 'show']);
     Route::patch('/notification-preferences',  [NotificationPreferencesController::class, 'update']);
     Route::delete('/notification-preferences', [NotificationPreferencesController::class, 'destroy']);
-
-    // News management (read/write with admin authorization in controller)
-    Route::apiResource('news', NewsController::class);
 
 });
 
@@ -188,7 +193,10 @@ Route::middleware(['auth:api', 'admin'])->prefix('v1/admin')->group(function () 
     Route::delete('/schedule/{academicSchedule}',  [AdminAcademicScheduleController::class, 'destroy']);
 
     // Announcement management
-    Route::apiResource('announcements', AnnouncementController::class);
+    Route::apiResource('announcements', AdminAnnouncementController::class);
+
+    // News management
+    Route::apiResource('news', AdminNewsController::class);
 
 });
 
