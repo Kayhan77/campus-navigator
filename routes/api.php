@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\V1\DeviceTokenController;
 use App\Http\Controllers\Api\V1\NotificationPreferencesController;
 use App\Http\Controllers\Api\V1\Event\EventController;
 use App\Http\Controllers\Api\V1\Event\EventCalendarController;
+use App\Http\Controllers\Api\V1\NewsController;
 use App\Http\Controllers\Api\V1\LostFoundController;
 use App\Http\Controllers\Api\V1\RoomController;
 use App\Http\Controllers\Api\V1\GlobalSearchController;
@@ -142,6 +143,9 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
     Route::get('/notification-preferences',    [NotificationPreferencesController::class, 'show']);
     Route::patch('/notification-preferences',  [NotificationPreferencesController::class, 'update']);
     Route::delete('/notification-preferences', [NotificationPreferencesController::class, 'destroy']);
+
+    // News management (read/write with admin authorization in controller)
+    Route::apiResource('news', NewsController::class);
 
 });
 
