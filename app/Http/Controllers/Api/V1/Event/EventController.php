@@ -42,7 +42,7 @@ class EventController extends Controller
     {
         $this->authorize('create', Event::class);
         $dto   = CreateEventDTO::fromRequest($request);
-        $event = $this->service->create($dto, $request->user()->id);
+        $event = $this->service->create($dto, $request->user()->id, $request->file('image'));
         return ApiResponse::success(new EventResource($event), 'Event created successfully.', 201);
     }
 
@@ -50,7 +50,7 @@ class EventController extends Controller
     {
         $this->authorize('update', $event);
         $dto     = UpdateEventDTO::fromRequest($request);
-        $updated = $this->service->update($event, $dto);
+        $updated = $this->service->update($event, $dto, $request->file('image'));
         return ApiResponse::success(new EventResource($updated), 'Event updated successfully.');
     }
 

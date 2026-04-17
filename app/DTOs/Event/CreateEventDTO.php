@@ -15,6 +15,7 @@ final class CreateEventDTO
         public readonly ?string $location,
         public readonly Carbon  $start_time,
         public readonly Carbon  $end_time,
+        public readonly ?string $image                = null,
         public readonly ?int    $room_id               = null,
         public readonly ?string $location_override      = null,
         public readonly string  $status                = 'draft',

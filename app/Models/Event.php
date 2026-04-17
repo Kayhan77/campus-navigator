@@ -21,6 +21,7 @@ class Event extends Model
         'room_id',
         'title',
         'description',
+        'image',
         'location',
         'location_override',
         'start_time',

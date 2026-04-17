@@ -17,6 +17,7 @@ class UpdateEventRequest extends FormRequest
             'room_id'               => 'sometimes|nullable|exists:rooms,id',
             'title'                 => 'sometimes|string|max:255',
             'description'           => 'sometimes|nullable|string',
+            'image'                 => 'sometimes|nullable|image|mimes:jpeg,png,jpg|max:2048',
             'location'              => 'sometimes|nullable|string|max:255',
             'location_override'     => 'sometimes|nullable|string|max:255',
             'start_time'            => 'sometimes|date',

@@ -11,10 +11,15 @@ use App\Services\Cache\CacheTags;
 use App\Services\Search\SearchCacheService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class EventService
 {
+    private const IMAGE_DISK = 'public';
+    private const IMAGE_PATH = 'events';
+
     public function __construct(
         private readonly SearchCacheService $cache
     ) {}
@@ -68,14 +73,26 @@ class EventService
     // Writes  (cache invalidation handled by EventObserver)
     // -------------------------------------------------------------------------
 
-    public function create(CreateEventDTO $dto, int $userId): Event
+    /**
+     * Create event with image upload
+     */
+    public function create(CreateEventDTO $dto, int $userId, ?UploadedFile $image = null): Event
     {
         $this->validateCapacity($dto->room_id, $dto->max_attendees);
 
-        return Event::create(array_merge($dto->toArray(), ['created_by' => $userId]));
+        $data = $dto->toArray();
+
+        if ($image) {
+            $data['image'] = $this->storeImage($image);
+        }
+
+        return Event::create(array_merge($data, ['created_by' => $userId]));
     }
 
-    public function update(Event $event, UpdateEventDTO $dto): Event
+    /**
+     * Update event with optional image replacement
+     */
+    public function update(Event $event, UpdateEventDTO $dto, ?UploadedFile $image = null): Event
     {
         $this->guardTerminalStatus($event);
 
@@ -83,13 +100,57 @@ class EventService
         $maxAttendees = $dto->max_attendees   ?? $event->max_attendees;
         $this->validateCapacity($roomId, $maxAttendees);
 
-        $event->update($dto->toArray());
+        $data = $dto->toArray();
+
+        // Handle image replacement
+        if ($image) {
+            // Delete old image if exists
+            if ($event->image) {
+                $this->deleteImage($event->image);
+            }
+            $data['image'] = $this->storeImage($image);
+        }
+
+        $event->update($data);
         return $event->fresh();
     }
 
+    /**
+     * Delete event and its image
+     */
     public function delete(Event $event): void
     {
+        // Delete image from storage
+        if ($event->image) {
+            $this->deleteImage($event->image);
+        }
+
         $event->delete();
+    }
+
+    // -------------------------------------------------------------------------
+    // Image handling
+    // -------------------------------------------------------------------------
+
+    /**
+     * Store uploaded image and return relative path
+     */
+    private function storeImage(UploadedFile $image): string
+    {
+        $filename = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+
+        return Storage::disk(self::IMAGE_DISK)
+            ->putFileAs(self::IMAGE_PATH, $image, $filename);
+    }
+
+    /**
+     * Delete image from storage safely
+     */
+    private function deleteImage(string $imagePath): void
+    {
+        if (Storage::disk(self::IMAGE_DISK)->exists($imagePath)) {
+            Storage::disk(self::IMAGE_DISK)->delete($imagePath);
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -126,3 +187,4 @@ class EventService
         }
     }
 }
+

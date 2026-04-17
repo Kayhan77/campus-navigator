@@ -12,6 +12,7 @@ class EventResource extends JsonResource
             'id'                    => $this->id,
             'title'                 => $this->title,
             'description'           => $this->description,
+            'image'                 => $this->image ? asset('storage/' . $this->image) : null,
             'location'              => $this->location,
             'location_override'     => $this->location_override,
             'status'                => $this->status,

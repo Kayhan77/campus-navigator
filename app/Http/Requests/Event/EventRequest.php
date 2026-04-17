@@ -17,6 +17,7 @@ class EventRequest extends FormRequest
             'room_id'               => 'nullable|exists:rooms,id',
             'title'                 => 'required|string|max:255',
             'description'           => 'nullable|string',
+            'image'                 => 'required|image|mimes:jpeg,png,jpg|max:2048',
             'location'              => 'nullable|string|max:255',
             'location_override'     => 'nullable|string|max:255',
             'start_time'            => 'required|date',
