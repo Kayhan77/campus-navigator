@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\Admin\AdminDashboardController;
 use App\Http\Controllers\Api\V1\Admin\AdminEventController;
 use App\Http\Controllers\Api\V1\Admin\AdminRoomController;
 use App\Http\Controllers\Api\V1\Admin\AdminUserController;
+use App\Http\Controllers\Api\V1\Admin\AnnouncementController;
 use App\Http\Controllers\Api\V1\Auth\JwtAuthController;
 use App\Http\Controllers\Api\V1\Auth\NewPasswordOtpController;
 use App\Http\Controllers\Api\V1\Auth\PasswordResetOtpController;
@@ -181,6 +182,9 @@ Route::middleware(['auth:api', 'admin'])->prefix('v1/admin')->group(function () 
     Route::post('/schedule',                       [AdminAcademicScheduleController::class, 'store']);
     Route::put('/schedule/{academicSchedule}',     [AdminAcademicScheduleController::class, 'update']);
     Route::delete('/schedule/{academicSchedule}',  [AdminAcademicScheduleController::class, 'destroy']);
+
+    // Announcement management
+    Route::apiResource('announcements', AnnouncementController::class);
 
 });
 
