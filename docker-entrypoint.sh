@@ -6,6 +6,7 @@ echo "🚀 Starting Laravel application..."
 echo "📁 Setting up permissions..."
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+chmod -R 775 storage bootstrap/cache
 
 # DB wait
 if [ -n "$DB_HOST" ]; then
@@ -19,8 +20,8 @@ if [ -n "$DB_HOST" ]; then
     done
 fi
 
-# echo "🔄 Running migrations..."
-# php artisan migrate --force --no-interaction
+echo "🔄 Running migrations..."
+php artisan migrate --force --no-interaction
 
 # echo "🌱 Running Super Admin Seeder..."
 # php artisan db:seed --class=SuperAdminSeeder --force --no-interaction
@@ -33,6 +34,7 @@ php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
+php artisan storage:link || true
 echo "🌐 Starting server..."
 exec php artisan serve --host=0.0.0.0 --port=10000
 php artisan queue:work --sleep=3 --tries=3
