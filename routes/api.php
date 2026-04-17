@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\V1\Event\EventController;
 use App\Http\Controllers\Api\V1\Event\EventCalendarController;
 use App\Http\Controllers\Api\V1\NewsController;
 use App\Http\Controllers\Api\V1\LostFoundController;
+use App\Http\Controllers\Api\V1\ItemClaimController;
 use App\Http\Controllers\Api\V1\RoomController;
 use App\Http\Controllers\Api\V1\GlobalSearchController;
 use App\Http\Controllers\Api\V1\RoomSearchController;
@@ -140,6 +141,12 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
 
     Route::get('/lost-found',  [LostFoundController::class, 'index']);
     Route::post('/lost-found', [LostFoundController::class, 'store']);
+
+    // Item claim system for lost-and-found
+    Route::post('/item-claims', [ItemClaimController::class, 'store']);
+    Route::get('/lost-found/{lostItem}/claims', [ItemClaimController::class, 'index']);
+    Route::patch('/item-claims/{claim}/accept', [ItemClaimController::class, 'accept']);
+    Route::patch('/item-claims/{claim}/reject', [ItemClaimController::class, 'reject']);
 
     // Device token registration for push notifications
     Route::post('/device-tokens', [DeviceTokenController::class, 'store'])

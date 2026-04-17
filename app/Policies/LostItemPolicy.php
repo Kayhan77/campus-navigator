@@ -11,6 +11,10 @@ class LostItemPolicy
     public function viewAny(User $user): bool { return true; }
     public function view(User $user, LostItem $item): bool { return true; }
     public function create(User $user): bool { return true; } // anyone can report
+    public function manageClaims(User $user, LostItem $item): bool
+    {
+        return $user->id === $item->user_id;
+    }
     public function update(User $user, LostItem $item): bool
     {
         return $user->id === $item->user_id || $user->hasAnyRole(UserRole::adminRoles());

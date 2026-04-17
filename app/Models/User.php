@@ -39,6 +39,11 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(LostItem::class);
     }
 
+    public function itemClaims()
+    {
+        return $this->hasMany(ItemClaim::class);
+    }
+
     public function events()
     {
         return $this->hasMany(Event::class, 'created_by');
