@@ -29,6 +29,7 @@ use App\Http\Controllers\Api\V1\RoomSearchController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\Api\V1\Auth\GoogleController;
+use Illuminate\Http\Request;
 
 
 Route::get('/test-connection', function () {
@@ -128,9 +129,22 @@ Route::prefix('v1')->group(function () {
     Route::get('/search', GlobalSearchController::class);
 
 });
+Route::middleware('auth:sanctum')->get('/test-fcm', function (Request $request) {
+    $user = $request->user();
+
+    app(\App\Services\FirebaseService::class)->sendNotification(
+        $user->fcm_token,
+        'Test Title',
+        'Hello from backend',
+        ['type' => 'test']
+    );
+
+    return 'sent';
+});
 
 // --- Authenticated routes ---
 Route::middleware('auth:api')->prefix('v1')->group(function () {
+    
 
     Route::get('/me',       [JwtAuthController::class, 'me']);
     Route::post('/logout',  [JwtAuthController::class, 'logout']);
