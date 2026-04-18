@@ -129,7 +129,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/search', GlobalSearchController::class);
 
 });
-Route::middleware('auth:sanctum')->get('/test-fcm', function (Request $request) {
+Route::middleware('auth:api')->get('/test-fcm', function (Request $request) {
     $user = $request->user();
 
     app(\App\Services\FirebaseService::class)->sendNotification(
