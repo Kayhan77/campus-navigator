@@ -11,10 +11,18 @@ class BuildingResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'type' => $this->type,
+            'category' => $this->category,
             'latitude' => $this->latitude,
             'longitude' => $this->longitude,
             'description' => $this->description,
-            'rooms' => RoomResource::collection($this->whenLoaded('rooms'))
+            'image' => $this->image ? asset('storage/' . $this->image) : null,
+            'opening_hours' => $this->opening_hours,
+            'notes' => $this->notes,
+            'rooms_count' => $this->rooms_count ?? null,
+            'rooms' => RoomResource::collection($this->whenLoaded('rooms')),
+            'created_at' => $this->created_at?->toISOString(),
+            'updated_at' => $this->updated_at?->toISOString(),
         ];
     }
 }

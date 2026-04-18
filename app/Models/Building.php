@@ -14,7 +14,7 @@ class Building extends Model
     /** Relations the client may request via ?include=rooms */
     protected array $allowedIncludes = ['rooms'];
 
-    protected $fillable = ['name', 'latitude', 'longitude', 'description'];
+    protected $fillable = ['name', 'type', 'category', 'latitude', 'longitude', 'description', 'image', 'opening_hours', 'notes'];
 
     public function rooms()
     {
