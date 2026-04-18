@@ -142,11 +142,12 @@ class AnnouncementService
     private function notifyUsers(string $title, string $body, array $data = []): void
     {
         User::query()
-            ->whereNotNull('fcm_token')
-            ->where('fcm_token', '!=', '')
-            ->pluck('fcm_token')
-            ->each(function (string $token) use ($title, $body, $data): void {
-                $this->firebase->sendNotification($token, $title, $body, $data);
+            ->whereHas('deviceTokens')
+            ->with('deviceTokens:id,user_id,token')
+            ->chunkById(200, function ($users) use ($title, $body, $data): void {
+                foreach ($users as $user) {
+                    $this->firebase->sendToUser($user, $title, $body, $data);
+                }
             });
     }
 }

@@ -50,13 +50,16 @@ class ItemClaimService
             'status' => 'pending',
         ]);
 
-        $ownerToken = $item->user?->fcm_token;
-        $this->firebase->sendNotification(
-            $ownerToken,
-            'New Item Claim',
-            $item->title,
-            ['type' => 'lost_found', 'id' => (string) $item->id]
-        );
+        $item->loadMissing('user.deviceTokens');
+
+        if ($item->user) {
+            $this->firebase->sendToUser(
+                $item->user,
+                'New Item Claim',
+                $item->title,
+                ['type' => 'lost_found', 'id' => (string) $item->id]
+            );
+        }
 
         return $claim;
     }
@@ -99,12 +102,16 @@ class ItemClaimService
 
             $accepted = $claim->fresh(['user', 'lostItem']);
 
-            $this->firebase->sendNotification(
-                $accepted->user?->fcm_token,
-                'Claim Accepted',
-                $item->title,
-                ['type' => 'lost_found', 'id' => (string) $item->id]
-            );
+            $accepted->loadMissing('user.deviceTokens');
+
+            if ($accepted->user) {
+                $this->firebase->sendToUser(
+                    $accepted->user,
+                    'Claim Accepted',
+                    $item->title,
+                    ['type' => 'lost_found', 'id' => (string) $item->id]
+                );
+            }
 
             return $accepted;
         });
@@ -121,13 +128,16 @@ class ItemClaimService
         $claim->update(['status' => 'rejected']);
 
         $rejected = $claim->fresh(['user', 'lostItem']);
+        $rejected->loadMissing('user.deviceTokens');
 
-        $this->firebase->sendNotification(
-            $rejected->user?->fcm_token,
-            'Claim Rejected',
-            $rejected->lostItem?->title ?? 'Lost Item',
-            ['type' => 'lost_found', 'id' => (string) $rejected->lost_item_id]
-        );
+        if ($rejected->user) {
+            $this->firebase->sendToUser(
+                $rejected->user,
+                'Claim Rejected',
+                $rejected->lostItem?->title ?? 'Lost Item',
+                ['type' => 'lost_found', 'id' => (string) $rejected->lost_item_id]
+            );
+        }
 
         return $rejected;
     }

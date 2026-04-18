@@ -15,6 +15,7 @@ class LostItemResource extends JsonResource
             'description' => $this->description,
             'location' => $this->location,
             'status' => $this->status,
+            'image' => $this->image ? asset('storage/' . $this->image) : null,
             'user' => new UserResource($this->whenLoaded('user')),
             'found_at' => $this->found_at?->toDateTimeString(),
             'created_at' => $this->created_at?->toDateTimeString(),

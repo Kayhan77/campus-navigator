@@ -12,6 +12,8 @@ use App\Services\FirebaseService;
 use App\Services\Search\SearchCacheService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class LostItemService
 {
@@ -78,16 +80,41 @@ class LostItemService
 
     public function create(CreateLostItemDTO $dto, int $userId): LostItem
     {
-        return LostItem::create(array_merge($dto->toArray(), [
+        $data = array_merge($dto->toArray(), [
             'user_id' => $userId,
-        ]));
+        ]);
+
+        if ($dto->image !== null) {
+            try {
+                $path = $dto->image->store('lost-found', 'public');
+                $data['image'] = $path;
+            } catch (\Exception $e) {
+                Log::warning('[Lost&Found] Image upload failed during create', ['error' => $e->getMessage()]);
+            }
+        }
+
+        return LostItem::create($data);
     }
 
     public function update(LostItem $item, UpdateLostItemDTO $dto): LostItem
     {
-        $wasFound = $item->status === 'found';
+        $data = $dto->toArray();
 
-        $item->update($dto->toArray());
+        if ($dto->image !== null) {
+            try {
+                if ($item->image && Storage::disk('public')->exists($item->image)) {
+                    Storage::disk('public')->delete($item->image);
+                }
+                $path = $dto->image->store('lost-found', 'public');
+                $data['image'] = $path;
+            } catch (\Exception $e) {
+                Log::warning('[Lost&Found] Image upload failed during update', ['error' => $e->getMessage()]);
+                unset($data['image']);
+            }
+        }
+
+        $wasFound = $item->status === 'found';
+        $item->update($data);
         $updated = $item->fresh();
 
         if (! $wasFound && $updated->status === 'found') {
@@ -99,6 +126,9 @@ class LostItemService
 
     public function delete(LostItem $item): void
     {
+        if ($item->image && Storage::disk('public')->exists($item->image)) {
+            Storage::disk('public')->delete($item->image);
+        }
         $item->delete();
     }
 
@@ -106,14 +136,14 @@ class LostItemService
     {
         ItemClaim::query()
             ->where('lost_item_id', $item->id)
-            ->with('user:id,fcm_token')
+            ->with('user.deviceTokens:id,user_id,token')
             ->get()
-            ->pluck('user.fcm_token')
-            ->filter(fn ($token) => is_string($token) && $token !== '')
-            ->unique()
-            ->each(function (string $token) use ($item): void {
-                $this->firebase->sendNotification(
-                    $token,
+            ->pluck('user')
+            ->filter()
+            ->unique('id')
+            ->each(function ($user) use ($item): void {
+                $this->firebase->sendToUser(
+                    $user,
                     'Lost Item Resolved',
                     $item->title,
                     ['type' => 'lost_found', 'id' => (string) $item->id]

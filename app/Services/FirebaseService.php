@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\User;
 use Google\Auth\Credentials\ServiceAccountCredentials;
 use Google\Auth\HttpHandler\HttpHandlerFactory;
 use GuzzleHttp\Client;
@@ -10,6 +11,20 @@ use Illuminate\Support\Facades\Log;
 class FirebaseService
 {
     private const FCM_SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
+
+    /**
+     * Send a notification to all registered device tokens of a user.
+     */
+    public function sendToUser(User $user, string $title, string $body, array $data = []): void
+    {
+        $user->loadMissing('deviceTokens');
+
+        foreach ($user->deviceTokens as $deviceToken) {
+            if (! empty($deviceToken->token)) {
+                $this->sendNotification($deviceToken->token, $title, $body, $data);
+            }
+        }
+    }
 
     public function sendNotification(?string $token, string $title, string $body, array $data = []): void
     {

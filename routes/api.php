@@ -132,8 +132,8 @@ Route::prefix('v1')->group(function () {
 Route::middleware('auth:api')->get('/test-fcm', function (Request $request) {
     $user = $request->user();
 
-    app(\App\Services\FirebaseService::class)->sendNotification(
-        $user->fcm_token,
+    app(\App\Services\FirebaseService::class)->sendToUser(
+        $user,
         'Test Title',
         'Hello from backend',
         ['type' => 'test']
@@ -166,8 +166,6 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
     Route::post('/device-tokens', [DeviceTokenController::class, 'store'])
         ->middleware('throttle:10,1');
     Route::delete('/device-tokens', [DeviceTokenController::class, 'destroy'])
-        ->middleware('throttle:10,1');
-    Route::post('/save-fcm-token', [DeviceTokenController::class, 'saveFcmToken'])
         ->middleware('throttle:10,1');
 
     // Push notification preferences

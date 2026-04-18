@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\DTOs\LostItem;
 
 use App\Http\Requests\LostItem\UpdateLostItemRequest;
+use Illuminate\Http\UploadedFile;
 
 final class UpdateLostItemDTO
 {
@@ -13,6 +14,7 @@ final class UpdateLostItemDTO
         public readonly ?string $description,
         public readonly ?string $location,
         public readonly ?string $status,
+        public readonly ?UploadedFile $image,
     ) {}
 
     public static function fromRequest(UpdateLostItemRequest $request): self
@@ -24,16 +26,26 @@ final class UpdateLostItemDTO
             description: $validated['description'] ?? null,
             location:    $validated['location'] ?? null,
             status:      $validated['status'] ?? null,
+            image:       $request->file('image'),
         );
     }
 
     public function toArray(): array
     {
-        return array_filter([
+        $data = [
             'title'       => $this->title,
             'description' => $this->description,
             'location'    => $this->location,
             'status'      => $this->status,
-        ], fn(mixed $value): bool => $value !== null);
+        ];
+
+        if ($this->image !== null) {
+            $data['image'] = null;
+        }
+
+        return array_filter(
+            $data,
+            fn(mixed $value): bool => $value !== null || $this->image !== null
+        );
     }
 }

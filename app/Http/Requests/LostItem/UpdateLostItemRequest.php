@@ -18,6 +18,7 @@ class UpdateLostItemRequest extends FormRequest
             'description' => 'sometimes|string|nullable',
             'location' => 'sometimes|string|max:255|nullable',
             'status' => 'sometimes|in:lost,found',
+            'image' => 'sometimes|file|image|mimes:jpg,jpeg,png,webp|max:5120',
         ];
     }
 }

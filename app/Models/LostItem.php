@@ -13,7 +13,7 @@ class LostItem extends Model
     /** Relations the client may request via ?include=user */
     protected array $allowedIncludes = ['user'];
 
-    protected $fillable = ['title', 'description', 'location', 'status', 'user_id'];
+    protected $fillable = ['title', 'description', 'location', 'status', 'user_id', 'image'];
 
     public function user()
     {

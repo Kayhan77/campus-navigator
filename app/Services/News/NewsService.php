@@ -10,6 +10,7 @@ use App\Services\FirebaseService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class NewsService
 {
@@ -59,12 +60,16 @@ class NewsService
     /**
      * Create news with image upload.
      */
-    public function create(CreateNewsDTO $dto, ?UploadedFile $image = null): News
+    public function create(CreateNewsDTO $dto): News
     {
         $data = $dto->toArray();
 
-        if ($image) {
-            $data['image'] = $this->storeImage($image);
+        if ($dto->image !== null) {
+            try {
+                $data['image'] = $this->storeImage($dto->image);
+            } catch (\Exception $e) {
+                Log::warning('[News] Image upload failed during create', ['error' => $e->getMessage()]);
+            }
         }
 
         $news = News::create($data);
@@ -83,17 +88,22 @@ class NewsService
     /**
      * Update news with optional image replacement.
      */
-    public function update(News $news, UpdateNewsDTO $dto, ?UploadedFile $image = null): News
+    public function update(News $news, UpdateNewsDTO $dto): News
     {
         $data = $dto->toArray();
 
         // Handle image replacement
-        if ($image) {
-            // Delete old image if exists
-            if ($news->image) {
-                $this->deleteImage($news->image);
+        if ($dto->image !== null) {
+            try {
+                // Delete old image if exists
+                if ($news->image && Storage::disk(self::IMAGE_DISK)->exists($news->image)) {
+                    Storage::disk(self::IMAGE_DISK)->delete($news->image);
+                }
+                $data['image'] = $this->storeImage($dto->image);
+            } catch (\Exception $e) {
+                Log::warning('[News] Image upload failed during update', ['error' => $e->getMessage()]);
+                unset($data['image']);
             }
-            $data['image'] = $this->storeImage($image);
         }
 
         $wasPublished = (bool) $news->is_published;
@@ -118,8 +128,8 @@ class NewsService
     public function delete(News $news): void
     {
         // Delete image from storage
-        if ($news->image) {
-            $this->deleteImage($news->image);
+        if ($news->image && Storage::disk(self::IMAGE_DISK)->exists($news->image)) {
+            Storage::disk(self::IMAGE_DISK)->delete($news->image);
         }
 
         $news->delete();
@@ -131,6 +141,7 @@ class NewsService
 
     /**
      * Store uploaded image and return relative path.
+     * Throws exception on failure (caught by caller).
      */
     private function storeImage(UploadedFile $image): string
     {
@@ -140,26 +151,15 @@ class NewsService
             ->putFileAs(self::IMAGE_PATH, $image, $filename);
     }
 
-    /**
-     * Delete image from storage safely.
-     */
-    private function deleteImage(string $imagePath): void
-    {
-        $disk = Storage::disk(self::IMAGE_DISK);
-
-        if ($disk->exists($imagePath)) {
-            $disk->delete($imagePath);
-        }
-    }
-
     private function notifyUsers(string $title, string $body, array $data = []): void
     {
         User::query()
-            ->whereNotNull('fcm_token')
-            ->where('fcm_token', '!=', '')
-            ->pluck('fcm_token')
-            ->each(function (string $token) use ($title, $body, $data): void {
-                $this->firebase->sendNotification($token, $title, $body, $data);
+            ->whereHas('deviceTokens')
+            ->with('deviceTokens:id,user_id,token')
+            ->chunkById(200, function ($users) use ($title, $body, $data): void {
+                foreach ($users as $user) {
+                    $this->firebase->sendToUser($user, $title, $body, $data);
+                }
             });
     }
 }
