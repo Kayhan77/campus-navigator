@@ -122,11 +122,11 @@ abstract class QueryFilter
 
     protected function applyLikeSearch(string $term): void
     {
-        $escaped = '%' . $this->escapeLike($term) . '%';
+        $escaped = '%' . $this->escapeLike(mb_strtolower($term)) . '%';
 
         $this->builder->where(function (Builder $query) use ($escaped): void {
             foreach ($this->searchable as $column) {
-                $query->orWhere($column, 'LIKE', $escaped);
+                $query->orWhereRaw('LOWER(' . $query->getQuery()->grammar->wrap($column) . ') LIKE ?', [$escaped]);
             }
         });
     }
