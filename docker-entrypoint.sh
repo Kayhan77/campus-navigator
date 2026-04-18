@@ -24,7 +24,7 @@ echo "🔄 Running migrations..."
 php artisan migrate --force --no-interaction
 
 # 2. Run seeder (populates 18 campus locations)
-php artisan db:seed --class=CampusLocationsSeeder
+php artisan db:seed --class=CampusLocationsSeeder --force --no-interaction
 
 # echo "🌱 Running Super Admin Seeder..."
 # php artisan db:seed --class=SuperAdminSeeder --force --no-interaction
