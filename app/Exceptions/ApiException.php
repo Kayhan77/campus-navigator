@@ -28,4 +28,14 @@ class ApiException extends Exception
             'errors'  => $this->errors,
         ], $this->statusCode);
     }
+
+    public function getStatusCode(): int
+    {
+        return $this->statusCode;
+    }
+
+    public function getErrors(): mixed
+    {
+        return $this->errors;
+    }
 }

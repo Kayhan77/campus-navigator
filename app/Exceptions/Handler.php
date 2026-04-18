@@ -3,9 +3,12 @@
 namespace App\Exceptions;
 
 use Throwable;
+use App\Helpers\ApiResponse;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Validation\ValidationException;
-use App\Helpers\ApiResponse;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class Handler extends ExceptionHandler
 {
@@ -19,70 +22,52 @@ class Handler extends ExceptionHandler
 
     public function register(): void
     {
-        $this->renderable(function (\Illuminate\Validation\ValidationException $e, $request) {
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validation Error',
-                    'errors'  => $e->errors(),
-            ], 422);
-            }
-        });
-
-        $this->renderable(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, $request) {
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Resource not found',
-                ], 404);
-            }
-        });
-
-        $this->renderable(function (\Illuminate\Auth\AuthenticationException $e, $request) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthenticated',
-            ], 401);
-        });
-
-        $this->renderable(function (\Throwable $e, $request) {
-            if ($request->expectsJson()) {
-
-                if (config('app.debug')) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => $e->getMessage(),
-                        'trace'   => $e->getTrace(),
-                    ], 500);
-                }
-
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Server Error',
-                ], 500);
-            }
-        });
+        // Keep all API rendering logic centralized in render().
     }
 
 
     public function render($request, Throwable $e)
     {
-        if ($request->expectsJson()) {
+        if (! $request->expectsJson()) {
+            return parent::render($request, $e);
+        }
 
-            if ($e instanceof ValidationException) {
-                return ApiResponse::error(
-                    'Validation failed',
-                    422,
-                    $e->errors()
-                );
-            }
-
+        if ($e instanceof ApiException) {
             return ApiResponse::error(
                 $e->getMessage(),
-                500
+                $e->getStatusCode(),
+                $e->getErrors()
             );
         }
 
-        return parent::render($request, $e);
+        if ($e instanceof ValidationException) {
+            return ApiResponse::error(
+                'Validation failed',
+                422,
+                $e->errors()
+            );
+        }
+
+        if ($e instanceof AuthenticationException) {
+            return ApiResponse::error('Unauthenticated', 401);
+        }
+
+        if ($e instanceof AuthorizationException) {
+            return ApiResponse::error('Forbidden', 403);
+        }
+
+        if ($e instanceof NotFoundHttpException) {
+            return ApiResponse::error('Resource not found', 404);
+        }
+
+        if (config('app.debug')) {
+            return ApiResponse::error(
+                $e->getMessage(),
+                500,
+                ['exception' => $e::class]
+            );
+        }
+
+        return ApiResponse::error('Server Error', 500);
     }
 }
