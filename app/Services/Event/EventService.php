@@ -7,7 +7,9 @@ use App\DTOs\Event\UpdateEventDTO;
 use App\Filters\EventFilter;
 use App\Models\Event;
 use App\Models\Room;
+use App\Models\User;
 use App\Services\Cache\CacheTags;
+use App\Services\FirebaseService;
 use App\Services\Search\SearchCacheService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
@@ -21,7 +23,8 @@ class EventService
     private const IMAGE_PATH = 'events';
 
     public function __construct(
-        private readonly SearchCacheService $cache
+        private readonly SearchCacheService $cache,
+        private readonly FirebaseService $firebase
     ) {}
 
     // -------------------------------------------------------------------------
@@ -86,7 +89,15 @@ class EventService
             $data['image'] = $this->storeImage($image);
         }
 
-        return Event::create(array_merge($data, ['created_by' => $userId]));
+        $event = Event::create(array_merge($data, ['created_by' => $userId]));
+
+        $this->notifyUsers(
+            title: 'New Event Created',
+            body: $event->title,
+            data: ['type' => 'event', 'id' => (string) $event->id]
+        );
+
+        return $event;
     }
 
     /**
@@ -112,7 +123,15 @@ class EventService
         }
 
         $event->update($data);
-        return $event->fresh();
+        $updated = $event->fresh();
+
+        $this->notifyUsers(
+            title: 'Event Updated',
+            body: $updated->title,
+            data: ['type' => 'event', 'id' => (string) $updated->id]
+        );
+
+        return $updated;
     }
 
     /**
@@ -185,6 +204,17 @@ class EventService
                 'status' => "A {$event->status} event cannot be updated.",
             ]);
         }
+    }
+
+    private function notifyUsers(string $title, string $body, array $data = []): void
+    {
+        User::query()
+            ->whereNotNull('fcm_token')
+            ->where('fcm_token', '!=', '')
+            ->pluck('fcm_token')
+            ->each(function (string $token) use ($title, $body, $data): void {
+                $this->firebase->sendNotification($token, $title, $body, $data);
+            });
     }
 }
 

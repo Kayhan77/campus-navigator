@@ -5,12 +5,18 @@ namespace App\Services\News;
 use App\DTOs\News\CreateNewsDTO;
 use App\DTOs\News\UpdateNewsDTO;
 use App\Models\News;
+use App\Models\User;
+use App\Services\FirebaseService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 class NewsService
 {
+        public function __construct(
+            private readonly FirebaseService $firebase
+        ) {}
+
     private const IMAGE_DISK = 'public';
     private const IMAGE_PATH = 'news';
 
@@ -61,7 +67,17 @@ class NewsService
             $data['image'] = $this->storeImage($image);
         }
 
-        return News::create($data);
+        $news = News::create($data);
+
+        if ($news->is_published) {
+            $this->notifyUsers(
+                title: 'News Published',
+                body: $news->title,
+                data: ['type' => 'news', 'id' => (string) $news->id]
+            );
+        }
+
+        return $news;
     }
 
     /**
@@ -80,8 +96,20 @@ class NewsService
             $data['image'] = $this->storeImage($image);
         }
 
+        $wasPublished = (bool) $news->is_published;
+
         $news->update($data);
-        return $news->fresh();
+        $updated = $news->fresh();
+
+        if (! $wasPublished && $updated->is_published) {
+            $this->notifyUsers(
+                title: 'News Published',
+                body: $updated->title,
+                data: ['type' => 'news', 'id' => (string) $updated->id]
+            );
+        }
+
+        return $updated;
     }
 
     /**
@@ -122,5 +150,16 @@ class NewsService
         if ($disk->exists($imagePath)) {
             $disk->delete($imagePath);
         }
+    }
+
+    private function notifyUsers(string $title, string $body, array $data = []): void
+    {
+        User::query()
+            ->whereNotNull('fcm_token')
+            ->where('fcm_token', '!=', '')
+            ->pluck('fcm_token')
+            ->each(function (string $token) use ($title, $body, $data): void {
+                $this->firebase->sendNotification($token, $title, $body, $data);
+            });
     }
 }

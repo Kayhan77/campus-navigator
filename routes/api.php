@@ -153,6 +153,8 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
         ->middleware('throttle:10,1');
     Route::delete('/device-tokens', [DeviceTokenController::class, 'destroy'])
         ->middleware('throttle:10,1');
+    Route::post('/save-fcm-token', [DeviceTokenController::class, 'saveFcmToken'])
+        ->middleware('throttle:10,1');
 
     // Push notification preferences
     Route::get('/notification-preferences',    [NotificationPreferencesController::class, 'show']);

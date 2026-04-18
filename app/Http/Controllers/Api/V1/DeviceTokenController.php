@@ -64,4 +64,22 @@ class DeviceTokenController extends Controller
 
         return ApiResponse::success(null, 'Device token removed successfully.');
     }
+
+    /**
+     * Save single FCM token directly on users table.
+     *
+     * POST /api/v1/save-fcm-token
+     */
+    public function saveFcmToken(Request $request)
+    {
+        $validated = $request->validate([
+            'fcm_token' => ['required', 'string', 'min:20', 'max:512'],
+        ]);
+
+        $request->user()->update([
+            'fcm_token' => $validated['fcm_token'],
+        ]);
+
+        return ApiResponse::success(null, 'FCM token saved successfully.');
+    }
 }

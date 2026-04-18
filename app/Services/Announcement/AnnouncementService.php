@@ -5,12 +5,18 @@ namespace App\Services\Announcement;
 use App\DTOs\Announcement\CreateAnnouncementDTO;
 use App\DTOs\Announcement\UpdateAnnouncementDTO;
 use App\Models\Announcement;
+use App\Models\User;
+use App\Services\FirebaseService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 class AnnouncementService
 {
+        public function __construct(
+            private readonly FirebaseService $firebase
+        ) {}
+
     private const IMAGE_DISK = 'public';
     private const IMAGE_PATH = 'announcements';
 
@@ -62,7 +68,15 @@ class AnnouncementService
             $data['image'] = $this->storeImage($image);
         }
 
-        return Announcement::create($data);
+        $announcement = Announcement::create($data);
+
+        $this->notifyUsers(
+            title: 'New Announcement',
+            body: $announcement->title,
+            data: ['type' => 'announcement', 'id' => (string) $announcement->id]
+        );
+
+        return $announcement;
     }
 
     /**
@@ -123,5 +137,16 @@ class AnnouncementService
         if ($disk->exists($imagePath)) {
             $disk->delete($imagePath);
         }
+    }
+
+    private function notifyUsers(string $title, string $body, array $data = []): void
+    {
+        User::query()
+            ->whereNotNull('fcm_token')
+            ->where('fcm_token', '!=', '')
+            ->pluck('fcm_token')
+            ->each(function (string $token) use ($title, $body, $data): void {
+                $this->firebase->sendNotification($token, $title, $body, $data);
+            });
     }
 }

@@ -4,12 +4,17 @@ namespace App\Services;
 
 use App\Models\ItemClaim;
 use App\Models\LostItem;
+use App\Services\FirebaseService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class ItemClaimService
 {
+    public function __construct(
+        private readonly FirebaseService $firebase
+    ) {}
+
     public function createClaim(int $userId, array $data): ItemClaim
     {
         $item = LostItem::findOrFail($data['lost_item_id']);
@@ -37,13 +42,23 @@ class ItemClaimService
             ]);
         }
 
-        return ItemClaim::create([
+        $claim = ItemClaim::create([
             'lost_item_id' => $item->id,
             'user_id' => $userId,
             'message' => $data['message'] ?? null,
             'location_found' => $data['location_found'] ?? null,
             'status' => 'pending',
         ]);
+
+        $ownerToken = $item->user?->fcm_token;
+        $this->firebase->sendNotification(
+            $ownerToken,
+            'New Item Claim',
+            $item->title,
+            ['type' => 'lost_found', 'id' => (string) $item->id]
+        );
+
+        return $claim;
     }
 
     public function getClaimsForItem(LostItem $item): Collection
@@ -82,7 +97,16 @@ class ItemClaimService
                 ->where('status', 'pending')
                 ->update(['status' => 'rejected']);
 
-            return $claim->fresh(['user', 'lostItem']);
+            $accepted = $claim->fresh(['user', 'lostItem']);
+
+            $this->firebase->sendNotification(
+                $accepted->user?->fcm_token,
+                'Claim Accepted',
+                $item->title,
+                ['type' => 'lost_found', 'id' => (string) $item->id]
+            );
+
+            return $accepted;
         });
     }
 
@@ -96,6 +120,15 @@ class ItemClaimService
 
         $claim->update(['status' => 'rejected']);
 
-        return $claim->fresh(['user', 'lostItem']);
+        $rejected = $claim->fresh(['user', 'lostItem']);
+
+        $this->firebase->sendNotification(
+            $rejected->user?->fcm_token,
+            'Claim Rejected',
+            $rejected->lostItem?->title ?? 'Lost Item',
+            ['type' => 'lost_found', 'id' => (string) $rejected->lost_item_id]
+        );
+
+        return $rejected;
     }
 }
