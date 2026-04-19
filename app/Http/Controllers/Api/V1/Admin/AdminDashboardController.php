@@ -16,14 +16,30 @@ class AdminDashboardController extends Controller
 
     public function index()
     {
-        $stats = $this->service->getStats();
+        $dashboard = $this->service->getStats();
 
         return ApiResponse::success([
-            'total_users'     => $stats['total_users'],
-            'total_events'    => $stats['total_events'],
-            'total_buildings' => $stats['total_buildings'],
-            'latest_5_users'  => AdminUserResource::collection($stats['latest_5_users']),
-            'latest_5_events' => EventResource::collection($stats['latest_5_events']),
+            'stats' => [
+                'total_users' => $dashboard['total_users'],
+                'total_events' => $dashboard['total_events'],
+                'total_buildings' => $dashboard['total_buildings'],
+                'total_news' => $dashboard['total_news'],
+                'total_announcements' => $dashboard['total_announcements'],
+                'total_lost_items' => $dashboard['total_lost_items'],
+                'total_found_items' => $dashboard['total_found_items'],
+            ],
+            'latest' => [
+                'users' => AdminUserResource::collection($dashboard['latest_users']),
+                'events' => EventResource::collection($dashboard['latest_events']),
+            ],
+            'activity' => [
+                'users_per_day' => $dashboard['users_per_day'],
+                'users_per_month' => $dashboard['users_per_month'],
+                'events_per_day' => $dashboard['events_per_day'],
+                'events_per_month' => $dashboard['events_per_month'],
+                'lost_items_per_day' => $dashboard['lost_items_per_day'],
+                'lost_items_per_month' => $dashboard['lost_items_per_month'],
+            ],
         ], 'Dashboard data retrieved successfully.');
     }
 }

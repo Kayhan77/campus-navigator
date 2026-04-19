@@ -49,6 +49,12 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(Event::class, 'created_by');
     }
 
+    public function registeredEvents()
+    {
+        return $this->belongsToMany(Event::class, 'event_user')
+            ->withTimestamps();
+    }
+
     /**
      * Device tokens registered for push notifications.
      */

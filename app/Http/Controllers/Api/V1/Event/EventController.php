@@ -60,4 +60,11 @@ class EventController extends Controller
         $this->service->delete($event);
         return ApiResponse::success(null, 'Event deleted successfully.');
     }
+
+    public function register(Request $request, Event $event)
+    {
+        $this->service->registerUserToEvent($event, $request->user());
+
+        return ApiResponse::success(null, 'Registered to event successfully.');
+    }
 }

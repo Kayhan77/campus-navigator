@@ -4,6 +4,7 @@ namespace App\Services\Event;
 
 use App\DTOs\Event\CreateEventDTO;
 use App\DTOs\Event\UpdateEventDTO;
+use App\Exceptions\ApiException;
 use App\Filters\EventFilter;
 use App\Models\Event;
 use App\Models\Room;
@@ -14,6 +15,7 @@ use App\Services\Search\SearchCacheService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
@@ -75,6 +77,43 @@ class EventService
     // -------------------------------------------------------------------------
     // Writes  (cache invalidation handled by EventObserver)
     // -------------------------------------------------------------------------
+
+    /**
+     * Register a user to an event with race-condition-safe capacity checks.
+     */
+    public function registerUserToEvent(Event $event, User $user): void
+    {
+        DB::transaction(function () use ($event, $user): void {
+            /** @var Event $lockedEvent */
+            $lockedEvent = Event::query()
+                ->whereKey($event->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if (! $lockedEvent->registration_required) {
+                throw new ApiException('Registration is not required for this event.', 422);
+            }
+
+            $alreadyRegistered = $lockedEvent->registeredUsers()
+                ->whereKey($user->id)
+                ->exists();
+
+            if ($alreadyRegistered) {
+                return;
+            }
+
+            // null max_attendees means unlimited capacity.
+            if ($lockedEvent->max_attendees !== null) {
+                $registeredCount = $lockedEvent->registeredUsers()->count();
+
+                if ($registeredCount >= $lockedEvent->max_attendees) {
+                    throw new ApiException('Event is fully booked', 422);
+                }
+            }
+
+            $lockedEvent->registeredUsers()->syncWithoutDetaching([$user->id]);
+        });
+    }
 
     /**
      * Create event with image upload

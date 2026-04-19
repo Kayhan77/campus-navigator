@@ -58,4 +58,10 @@ class Event extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    public function registeredUsers()
+    {
+        return $this->belongsToMany(User::class, 'event_user')
+            ->withTimestamps();
+    }
 }

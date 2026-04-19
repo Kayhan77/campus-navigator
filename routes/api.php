@@ -25,7 +25,6 @@ use App\Http\Controllers\Api\V1\LostFoundController;
 use App\Http\Controllers\Api\V1\ItemClaimController;
 use App\Http\Controllers\Api\V1\RoomController;
 use App\Http\Controllers\Api\V1\GlobalSearchController;
-use App\Http\Controllers\Api\V1\RoomSearchController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\Api\V1\Auth\GoogleController;
@@ -150,9 +149,10 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
     Route::post('/logout',  [JwtAuthController::class, 'logout']);
     Route::post('/refresh', [RefreshTokenController::class, 'refresh']);
 
-    
-    Route::get('/rooms/search', [RoomSearchController::class, 'index']);
+    // Event registration
+    Route::post('/events/{event}/register', [EventController::class, 'register']);
 
+    
     Route::get('/lost-found',  [LostFoundController::class, 'index']);
     Route::post('/lost-found', [LostFoundController::class, 'store']);
 
