@@ -53,7 +53,9 @@ class EventService
         return $this->cache->remember(
             CacheTags::EVENTS,
             $key,
-            fn () => Event::filter($filter)->withAllowed($request, [])->paginate($perPage)
+            fn () => Event::filter($filter)
+                ->withAllowed($request, [])
+                ->paginate($perPage)
         );
     }
 
@@ -80,6 +82,7 @@ class EventService
 
     /**
      * Register a user to an event with race-condition-safe capacity checks.
+     * Uses atomic increment on persisted registered_users_count column.
      */
     public function registerUserToEvent(Event $event, User $user): void
     {
@@ -104,15 +107,46 @@ class EventService
 
             // null max_attendees means unlimited capacity.
             if ($lockedEvent->max_attendees !== null) {
-                $registeredCount = $lockedEvent->registeredUsers()->count();
-
-                if ($registeredCount >= $lockedEvent->max_attendees) {
+                if ($lockedEvent->registered_users_count >= $lockedEvent->max_attendees) {
                     throw new ApiException('Event is fully booked', 422);
                 }
             }
 
             $lockedEvent->registeredUsers()->syncWithoutDetaching([$user->id]);
+            $lockedEvent->increment('registered_users_count');
         });
+
+        $this->cache->invalidate(CacheTags::EVENTS);
+    }
+
+    /**
+     * Unregister a user from an event.
+     * Uses atomic decrement on persisted registered_users_count column.
+     * Idempotent: safe if user wasn't registered.
+     */
+    public function unregisterUserFromEvent(Event $event, User $user): void
+    {
+        DB::transaction(function () use ($event, $user): void {
+            /** @var Event $lockedEvent */
+            $lockedEvent = Event::query()
+                ->whereKey($event->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $wasRegistered = $lockedEvent->registeredUsers()
+                ->whereKey($user->id)
+                ->exists();
+
+            if ($wasRegistered) {
+                $lockedEvent->registeredUsers()->detach($user->id);
+                // Ensure counter never goes below 0
+                if ($lockedEvent->registered_users_count > 0) {
+                    $lockedEvent->decrement('registered_users_count');
+                }
+            }
+        });
+
+        $this->cache->invalidate(CacheTags::EVENTS);
     }
 
     /**
@@ -136,7 +170,7 @@ class EventService
             data: ['type' => 'event', 'id' => (string) $event->id]
         );
 
-        return $event;
+        return $event->fresh();
     }
 
     /**

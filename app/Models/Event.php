@@ -30,6 +30,7 @@ class Event extends Model
         'is_public',
         'max_attendees',
         'registration_required',
+        'registered_users_count',
         'reminder_sent_at',
         'reminders_dispatched',
         'created_by',
@@ -41,6 +42,7 @@ class Event extends Model
         'reminder_sent_at'      => 'datetime',
         'is_public'             => 'boolean',
         'registration_required' => 'boolean',
+        'registered_users_count' => 'integer',
         'reminders_dispatched'  => 'array',   // JSON array of dispatched window keys
     ];
 

@@ -151,6 +151,7 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
 
     // Event registration
     Route::post('/events/{event}/register', [EventController::class, 'register']);
+    Route::delete('/events/{event}/register', [EventController::class, 'unregister']);
 
     
     Route::get('/lost-found',  [LostFoundController::class, 'index']);

@@ -8,6 +8,12 @@ class EventResource extends JsonResource
 {
     public function toArray($request): array
     {
+        // registered_users_count is now a persisted database column (not a count aggregate)
+        $registeredUsersCount = (int) ($this->registered_users_count ?? 0);
+        $isFull = $this->max_attendees !== null
+            ? $registeredUsersCount >= (int) $this->max_attendees
+            : false;
+
         return [
             'id'                    => $this->id,
             'title'                 => $this->title,
@@ -18,6 +24,8 @@ class EventResource extends JsonResource
             'status'                => $this->status,
             'is_public'             => (bool) $this->is_public,
             'max_attendees'         => $this->max_attendees,
+            'registered_users_count' => $registeredUsersCount,
+            'is_full'               => $isFull,
             'registration_required' => (bool) $this->registration_required,
             'reminder_sent_at'      => $this->reminder_sent_at?->toISOString(),
             'start_time'            => $this->start_time?->toISOString(),

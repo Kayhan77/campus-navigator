@@ -67,4 +67,11 @@ class EventController extends Controller
 
         return ApiResponse::success(null, 'Registered to event successfully.');
     }
+
+    public function unregister(Request $request, Event $event)
+    {
+        $this->service->unregisterUserFromEvent($event, $request->user());
+
+        return ApiResponse::success(null, 'Unregistered from event successfully.');
+    }
 }
