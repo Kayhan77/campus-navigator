@@ -12,21 +12,22 @@ use App\Models\User;
 use App\Services\Cache\CacheTags;
 use App\Services\FirebaseService;
 use App\Services\Search\SearchCacheService;
+use App\Services\SupabaseStorageService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class EventService
 {
-    private const IMAGE_DISK = 'public';
     private const IMAGE_PATH = 'events';
 
     public function __construct(
         private readonly SearchCacheService $cache,
-        private readonly FirebaseService $firebase
+        private readonly FirebaseService $firebase,
+        private readonly SupabaseStorageService $supabaseStorage
     ) {}
 
     // -------------------------------------------------------------------------
@@ -86,37 +87,48 @@ class EventService
      */
     public function registerUserToEvent(Event $event, User $user): void
     {
-        DB::transaction(function () use ($event, $user): void {
-            /** @var Event $lockedEvent */
-            $lockedEvent = Event::query()
-                ->whereKey($event->id)
-                ->lockForUpdate()
-                ->firstOrFail();
+        try {
+            DB::transaction(function () use ($event, $user): void {
+                /** @var Event $lockedEvent */
+                $lockedEvent = Event::query()
+                    ->whereKey($event->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-            if (! $lockedEvent->registration_required) {
-                throw new ApiException('Registration is not required for this event.', 422);
-            }
-
-            $alreadyRegistered = $lockedEvent->registeredUsers()
-                ->whereKey($user->id)
-                ->exists();
-
-            if ($alreadyRegistered) {
-                return;
-            }
-
-            // null max_attendees means unlimited capacity.
-            if ($lockedEvent->max_attendees !== null) {
-                if ($lockedEvent->registered_users_count >= $lockedEvent->max_attendees) {
-                    throw new ApiException('Event is fully booked', 422);
+                if (! $lockedEvent->registration_required) {
+                    throw new ApiException('Registration is not required for this event.', 422);
                 }
-            }
 
-            $lockedEvent->registeredUsers()->syncWithoutDetaching([$user->id]);
-            $lockedEvent->increment('registered_users_count');
-        });
+                $alreadyRegistered = $lockedEvent->registeredUsers()
+                    ->whereKey($user->id)
+                    ->exists();
 
-        $this->cache->invalidate(CacheTags::EVENTS);
+                if ($alreadyRegistered) {
+                    return;
+                }
+
+                // null max_attendees means unlimited capacity.
+                if ($lockedEvent->max_attendees !== null) {
+                    if ($lockedEvent->registered_users_count >= $lockedEvent->max_attendees) {
+                        throw new ApiException('Event is fully booked', 422);
+                    }
+                }
+
+                $lockedEvent->registeredUsers()->syncWithoutDetaching([$user->id]);
+                $lockedEvent->increment('registered_users_count');
+            });
+
+            $this->cache->invalidate(CacheTags::EVENTS);
+        } catch (ApiException|ValidationException $e) {
+            throw $e;
+        } catch (Throwable $e) {
+            $this->logServiceError('event_register_failed', $e, [
+                'event_id' => $event->id,
+                'user_id' => $user->id,
+            ]);
+
+            throw new ApiException('Failed to register to event.', 500);
+        }
     }
 
     /**
@@ -126,27 +138,38 @@ class EventService
      */
     public function unregisterUserFromEvent(Event $event, User $user): void
     {
-        DB::transaction(function () use ($event, $user): void {
-            /** @var Event $lockedEvent */
-            $lockedEvent = Event::query()
-                ->whereKey($event->id)
-                ->lockForUpdate()
-                ->firstOrFail();
+        try {
+            DB::transaction(function () use ($event, $user): void {
+                /** @var Event $lockedEvent */
+                $lockedEvent = Event::query()
+                    ->whereKey($event->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-            $wasRegistered = $lockedEvent->registeredUsers()
-                ->whereKey($user->id)
-                ->exists();
+                $wasRegistered = $lockedEvent->registeredUsers()
+                    ->whereKey($user->id)
+                    ->exists();
 
-            if ($wasRegistered) {
-                $lockedEvent->registeredUsers()->detach($user->id);
-                // Ensure counter never goes below 0
-                if ($lockedEvent->registered_users_count > 0) {
-                    $lockedEvent->decrement('registered_users_count');
+                if ($wasRegistered) {
+                    $lockedEvent->registeredUsers()->detach($user->id);
+                    // Ensure counter never goes below 0
+                    if ($lockedEvent->registered_users_count > 0) {
+                        $lockedEvent->decrement('registered_users_count');
+                    }
                 }
-            }
-        });
+            });
 
-        $this->cache->invalidate(CacheTags::EVENTS);
+            $this->cache->invalidate(CacheTags::EVENTS);
+        } catch (ApiException|ValidationException $e) {
+            throw $e;
+        } catch (Throwable $e) {
+            $this->logServiceError('event_unregister_failed', $e, [
+                'event_id' => $event->id,
+                'user_id' => $user->id,
+            ]);
+
+            throw new ApiException('Failed to unregister from event.', 500);
+        }
     }
 
     /**
@@ -154,23 +177,34 @@ class EventService
      */
     public function create(CreateEventDTO $dto, int $userId, ?UploadedFile $image = null): Event
     {
-        $this->validateCapacity($dto->room_id, $dto->max_attendees);
+        try {
+            $this->validateCapacity($dto->room_id, $dto->max_attendees);
 
-        $data = $dto->toArray();
+            $data = $dto->toArray();
 
-        if ($image) {
-            $data['image'] = $this->storeImage($image);
+            if ($image) {
+                $data['image'] = $this->storeImage($image);
+            }
+
+            $event = Event::create(array_merge($data, ['created_by' => $userId]));
+
+            $this->notifyUsers(
+                title: 'New Event Created',
+                body: $event->title,
+                data: ['type' => 'event', 'id' => (string) $event->id]
+            );
+
+            return $event->fresh();
+        } catch (ApiException|ValidationException $e) {
+            throw $e;
+        } catch (Throwable $e) {
+            $this->logServiceError('event_create_failed', $e, [
+                'user_id' => $userId,
+                'title' => $dto->title,
+            ]);
+
+            throw new ApiException('Failed to create event.', 500);
         }
-
-        $event = Event::create(array_merge($data, ['created_by' => $userId]));
-
-        $this->notifyUsers(
-            title: 'New Event Created',
-            body: $event->title,
-            data: ['type' => 'event', 'id' => (string) $event->id]
-        );
-
-        return $event->fresh();
     }
 
     /**
@@ -178,33 +212,51 @@ class EventService
      */
     public function update(Event $event, UpdateEventDTO $dto, ?UploadedFile $image = null): Event
     {
-        $this->guardTerminalStatus($event);
+        try {
+            $this->guardTerminalStatus($event);
 
-        $roomId       = $dto->room_id       ?? $event->room_id;
-        $maxAttendees = $dto->max_attendees   ?? $event->max_attendees;
-        $this->validateCapacity($roomId, $maxAttendees);
-
-        $data = $dto->toArray();
-
-        // Handle image replacement
-        if ($image) {
-            // Delete old image if exists
-            if ($event->image) {
-                $this->deleteImage($event->image);
+            // Validate business constraint: cannot disable registration_required if users already registered
+            if ($dto->registration_required === false && $event->registered_users_count > 0) {
+                throw ValidationException::withMessages([
+                    'registration_required' => 'Cannot disable registration requirement when users are already registered for this event.',
+                ]);
             }
-            $data['image'] = $this->storeImage($image);
+
+            $roomId       = $dto->room_id       ?? $event->room_id;
+            $maxAttendees = $dto->max_attendees   ?? $event->max_attendees;
+            $this->validateCapacity($roomId, $maxAttendees);
+
+            $data = $dto->toArray();
+
+            // Handle image replacement
+            if ($image) {
+                // Delete old image if exists
+                if ($event->image) {
+                    $this->deleteImage($event->image);
+                }
+                $data['image'] = $this->storeImage($image);
+            }
+
+            $event->update($data);
+            $updated = $event->fresh();
+
+            $this->notifyUsers(
+                title: 'Event Updated',
+                body: $updated->title,
+                data: ['type' => 'event', 'id' => (string) $updated->id]
+            );
+
+            return $updated;
+        } catch (ApiException|ValidationException $e) {
+            throw $e;
+        } catch (Throwable $e) {
+            $this->logServiceError('event_update_failed', $e, [
+                'event_id' => $event->id,
+                'user_id' => auth('api')->id(),
+            ]);
+
+            throw new ApiException('Failed to update event.', 500);
         }
-
-        $event->update($data);
-        $updated = $event->fresh();
-
-        $this->notifyUsers(
-            title: 'Event Updated',
-            body: $updated->title,
-            data: ['type' => 'event', 'id' => (string) $updated->id]
-        );
-
-        return $updated;
     }
 
     /**
@@ -229,10 +281,7 @@ class EventService
      */
     private function storeImage(UploadedFile $image): string
     {
-        $filename = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-
-        return Storage::disk(self::IMAGE_DISK)
-            ->putFileAs(self::IMAGE_PATH, $image, $filename);
+        return $this->supabaseStorage->uploadImage($image, self::IMAGE_PATH);
     }
 
     /**
@@ -240,9 +289,7 @@ class EventService
      */
     private function deleteImage(string $imagePath): void
     {
-        if (Storage::disk(self::IMAGE_DISK)->exists($imagePath)) {
-            Storage::disk(self::IMAGE_DISK)->delete($imagePath);
-        }
+        $this->supabaseStorage->delete($imagePath);
     }
 
     // -------------------------------------------------------------------------
@@ -286,9 +333,25 @@ class EventService
             ->with('deviceTokens:id,user_id,token')
             ->chunkById(200, function ($users) use ($title, $body, $data): void {
                 foreach ($users as $user) {
-                    $this->firebase->sendToUser($user, $title, $body, $data);
+                    try {
+                        $this->firebase->sendToUser($user, $title, $body, $data);
+                    } catch (Throwable $e) {
+                        $this->logServiceError('event_notification_failed', $e, [
+                            'recipient_user_id' => $user->id,
+                            'title' => $title,
+                        ]);
+                    }
                 }
             });
+    }
+
+    private function logServiceError(string $operation, Throwable $e, array $context = []): void
+    {
+        logger()->error('Event service operation failed', array_merge([
+            'operation' => $operation,
+            'exception' => $e::class,
+            'message' => $e->getMessage(),
+        ], $context));
     }
 }
 

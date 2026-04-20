@@ -3,6 +3,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Rules\ValidEmailDomain;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -19,9 +20,10 @@ class PreRegisterRequest extends FormRequest
             'name' => 'nullable|string|max:255',
             'email' => [
                 'required',
-                'email',
+                'email:rfc,dns',
                 Rule::unique('users', 'email'),                // not registered yet
-                Rule::unique('pending_registrations', 'email') // not already pre-registered
+                Rule::unique('pending_registrations', 'email'), // not already pre-registered
+                new ValidEmailDomain(),
             ],
             'password' => 'required|string|min:6|confirmed',
         ];
@@ -31,6 +33,7 @@ class PreRegisterRequest extends FormRequest
     {
         return [
             'email.unique' => 'This email is already registered or pending registration.',
+            'email.email' => 'Please provide a valid email address.',
             'password.confirmed' => 'Password confirmation does not match.'
         ];
     }

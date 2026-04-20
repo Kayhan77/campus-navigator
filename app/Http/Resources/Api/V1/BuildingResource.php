@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Services\SupabaseStorageService;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class BuildingResource extends JsonResource
@@ -16,7 +17,7 @@ class BuildingResource extends JsonResource
             'latitude' => $this->latitude,
             'longitude' => $this->longitude,
             'description' => $this->description,
-            'image' => $this->image ? asset('storage/' . $this->image) : null,
+            'image' => SupabaseStorageService::publicUrl($this->image),
             'opening_hours' => $this->opening_hours,
             'notes' => $this->notes,
             'rooms_count' => $this->rooms_count ?? null,

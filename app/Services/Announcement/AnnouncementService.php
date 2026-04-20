@@ -7,17 +7,17 @@ use App\DTOs\Announcement\UpdateAnnouncementDTO;
 use App\Models\Announcement;
 use App\Models\User;
 use App\Services\FirebaseService;
+use App\Services\SupabaseStorageService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 
 class AnnouncementService
 {
         public function __construct(
-            private readonly FirebaseService $firebase
+            private readonly FirebaseService $firebase,
+            private readonly SupabaseStorageService $supabaseStorage
         ) {}
 
-    private const IMAGE_DISK = 'public';
     private const IMAGE_PATH = 'announcements';
 
     // -------------------------------------------------------------------------
@@ -121,10 +121,7 @@ class AnnouncementService
      */
     private function storeImage(UploadedFile $image): string
     {
-        $filename = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-
-        return Storage::disk(self::IMAGE_DISK)
-            ->putFileAs(self::IMAGE_PATH, $image, $filename);
+        return $this->supabaseStorage->uploadImage($image, self::IMAGE_PATH);
     }
 
     /**
@@ -132,11 +129,7 @@ class AnnouncementService
      */
     private function deleteImage(string $imagePath): void
     {
-        $disk = Storage::disk(self::IMAGE_DISK);
-
-        if ($disk->exists($imagePath)) {
-            $disk->delete($imagePath);
-        }
+        $this->supabaseStorage->delete($imagePath);
     }
 
     private function notifyUsers(string $title, string $body, array $data = []): void

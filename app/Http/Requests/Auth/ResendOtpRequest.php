@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Rules\ValidEmailDomain;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ResendOtpRequest extends FormRequest
@@ -16,7 +17,8 @@ class ResendOtpRequest extends FormRequest
         return [
             'email' => [
                 'required',
-                'email',
+                'email:rfc,dns',
+                new ValidEmailDomain(),
                 'exists:pending_registrations,email',
             ],
         ];

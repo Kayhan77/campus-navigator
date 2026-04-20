@@ -7,18 +7,18 @@ use App\DTOs\News\UpdateNewsDTO;
 use App\Models\News;
 use App\Models\User;
 use App\Services\FirebaseService;
+use App\Services\SupabaseStorageService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 
 class NewsService
 {
         public function __construct(
-            private readonly FirebaseService $firebase
+            private readonly FirebaseService $firebase,
+            private readonly SupabaseStorageService $supabaseStorage
         ) {}
 
-    private const IMAGE_DISK = 'public';
     private const IMAGE_PATH = 'news';
 
     // -------------------------------------------------------------------------
@@ -96,8 +96,8 @@ class NewsService
         if ($dto->image !== null) {
             try {
                 // Delete old image if exists
-                if ($news->image && Storage::disk(self::IMAGE_DISK)->exists($news->image)) {
-                    Storage::disk(self::IMAGE_DISK)->delete($news->image);
+                if ($news->image) {
+                    $this->supabaseStorage->delete($news->image);
                 }
                 $data['image'] = $this->storeImage($dto->image);
             } catch (\Exception $e) {
@@ -128,8 +128,8 @@ class NewsService
     public function delete(News $news): void
     {
         // Delete image from storage
-        if ($news->image && Storage::disk(self::IMAGE_DISK)->exists($news->image)) {
-            Storage::disk(self::IMAGE_DISK)->delete($news->image);
+        if ($news->image) {
+            $this->supabaseStorage->delete($news->image);
         }
 
         $news->delete();
@@ -145,10 +145,7 @@ class NewsService
      */
     private function storeImage(UploadedFile $image): string
     {
-        $filename = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-
-        return Storage::disk(self::IMAGE_DISK)
-            ->putFileAs(self::IMAGE_PATH, $image, $filename);
+        return $this->supabaseStorage->uploadImage($image, self::IMAGE_PATH);
     }
 
     private function notifyUsers(string $title, string $body, array $data = []): void

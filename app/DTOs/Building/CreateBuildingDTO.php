@@ -47,7 +47,7 @@ final class CreateBuildingDTO
             'description' => $this->description,
             'opening_hours' => $this->opening_hours,
             'notes' => $this->notes,
-            'image' => $this->image ? asset('storage/' . $this->image) : null,
+            'image' => null,
         ];
     }
 }

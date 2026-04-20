@@ -4,6 +4,7 @@ namespace App\Exceptions;
 
 use Throwable;
 use App\Helpers\ApiResponse;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
@@ -22,7 +23,27 @@ class Handler extends ExceptionHandler
 
     public function register(): void
     {
-        // Keep all API rendering logic centralized in render().
+        $this->reportable(function (Throwable $e): void {
+            if (! request()?->expectsJson()) {
+                return;
+            }
+
+            logger()->error('Unhandled exception', [
+                'exception' => $e::class,
+                'message' => $e->getMessage(),
+                'user_id' => request()->user()?->id,
+                'path' => request()->path(),
+                'method' => request()->method(),
+                'request' => request()->except([
+                    'password',
+                    'password_confirmation',
+                    'current_password',
+                    'token',
+                    'access_token',
+                    'refresh_token',
+                ]),
+            ]);
+        });
     }
 
 
@@ -46,6 +67,10 @@ class Handler extends ExceptionHandler
                 422,
                 $e->errors()
             );
+        }
+
+        if ($e instanceof ModelNotFoundException) {
+            return ApiResponse::error('Resource not found', 404);
         }
 
         if ($e instanceof AuthenticationException) {

@@ -3,30 +3,20 @@
 namespace App\Exceptions;
 
 use Exception;
-use Illuminate\Http\JsonResponse;
 
 class ApiException extends Exception
 {
     protected int $statusCode;
-    protected mixed $errors;
+    protected ?array $errors;
 
     public function __construct(
         string $message = 'API Error',
         int $statusCode = 400,
-        mixed $errors = null
+        ?array $errors = null
     ) {
         parent::__construct($message);
         $this->statusCode = $statusCode;
         $this->errors = $errors;
-    }
-
-    public function render(): JsonResponse
-    {
-        return response()->json([
-            'success' => false,
-            'message' => $this->getMessage(),
-            'errors'  => $this->errors,
-        ], $this->statusCode);
     }
 
     public function getStatusCode(): int
@@ -34,7 +24,7 @@ class ApiException extends Exception
         return $this->statusCode;
     }
 
-    public function getErrors(): mixed
+    public function getErrors(): ?array
     {
         return $this->errors;
     }

@@ -10,16 +10,17 @@ use App\Models\LostItem;
 use App\Services\Cache\CacheTags;
 use App\Services\FirebaseService;
 use App\Services\Search\SearchCacheService;
+use App\Services\SupabaseStorageService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 
 class LostItemService
 {
     public function __construct(
         private readonly SearchCacheService $cache,
-        private readonly FirebaseService $firebase
+        private readonly FirebaseService $firebase,
+        private readonly SupabaseStorageService $supabaseStorage
     ) {}
 
     // -------------------------------------------------------------------------
@@ -86,7 +87,7 @@ class LostItemService
 
         if ($dto->image !== null) {
             try {
-                $path = $dto->image->store('lost-found', 'public');
+                $path = $this->supabaseStorage->uploadImage($dto->image, 'lost-found');
                 $data['image'] = $path;
             } catch (\Exception $e) {
                 Log::warning('[Lost&Found] Image upload failed during create', ['error' => $e->getMessage()]);
@@ -102,10 +103,10 @@ class LostItemService
 
         if ($dto->image !== null) {
             try {
-                if ($item->image && Storage::disk('public')->exists($item->image)) {
-                    Storage::disk('public')->delete($item->image);
+                if ($item->image) {
+                    $this->supabaseStorage->delete($item->image);
                 }
-                $path = $dto->image->store('lost-found', 'public');
+                $path = $this->supabaseStorage->uploadImage($dto->image, 'lost-found');
                 $data['image'] = $path;
             } catch (\Exception $e) {
                 Log::warning('[Lost&Found] Image upload failed during update', ['error' => $e->getMessage()]);
@@ -126,8 +127,8 @@ class LostItemService
 
     public function delete(LostItem $item): void
     {
-        if ($item->image && Storage::disk('public')->exists($item->image)) {
-            Storage::disk('public')->delete($item->image);
+        if ($item->image) {
+            $this->supabaseStorage->delete($item->image);
         }
         $item->delete();
     }

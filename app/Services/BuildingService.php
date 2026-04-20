@@ -6,20 +6,20 @@ use App\DTOs\Building\CreateBuildingDTO;
 use App\DTOs\Building\UpdateBuildingDTO;
 use App\Filters\BuildingFilter;
 use App\Models\Building;
+use App\Services\SupabaseStorageService;
 use App\Services\Cache\CacheTags;
 use App\Services\Search\SearchCacheService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 
 class BuildingService
 {
-    private const IMAGE_DISK = 'public';
     private const IMAGE_PATH = 'locations';
 
     public function __construct(
-        private readonly SearchCacheService $cache
+        private readonly SearchCacheService $cache,
+        private readonly SupabaseStorageService $supabaseStorage
     ) {}
 
     // -------------------------------------------------------------------------
@@ -94,8 +94,8 @@ class BuildingService
         if ($dto->image !== null) {
             try {
                 // Delete old image if exists
-                if ($building->image && Storage::disk(self::IMAGE_DISK)->exists($building->image)) {
-                    Storage::disk(self::IMAGE_DISK)->delete($building->image);
+                if ($building->image) {
+                    $this->supabaseStorage->delete($building->image);
                 }
                 $data['image'] = $this->storeImage($dto->image);
             } catch (\Exception $e) {
@@ -111,8 +111,8 @@ class BuildingService
     public function delete(Building $building): void
     {
         // Delete image from storage
-        if ($building->image && Storage::disk(self::IMAGE_DISK)->exists($building->image)) {
-            Storage::disk(self::IMAGE_DISK)->delete($building->image);
+        if ($building->image) {
+            $this->supabaseStorage->delete($building->image);
         }
 
         $building->delete();
@@ -128,9 +128,6 @@ class BuildingService
      */
     private function storeImage(\Illuminate\Http\UploadedFile $image): string
     {
-        $filename = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-
-        return Storage::disk(self::IMAGE_DISK)
-            ->putFileAs(self::IMAGE_PATH, $image, $filename);
+        return $this->supabaseStorage->uploadImage($image, self::IMAGE_PATH);
     }
 }

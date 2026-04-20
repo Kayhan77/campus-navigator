@@ -27,6 +27,8 @@ use App\Http\Controllers\Api\V1\RoomController;
 use App\Http\Controllers\Api\V1\GlobalSearchController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use App\Http\Controllers\Api\V1\Auth\GoogleController;
 use Illuminate\Http\Request;
 
@@ -52,6 +54,124 @@ Route::get('/test-mail', function () {
 
     return 'Mail sent';
 });
+
+// Debug: Upload image to Supabase Storage and return test URLs
+Route::post('/test-supabase/upload-image', function (Request $request) {
+    $request->validate([
+        'image' => ['required', 'image', 'max:5120'],
+    ]);
+
+    $supabaseUrl = rtrim((string) env('SUPABASE_URL'), '/');
+    $serviceKey = (string) env('SUPABASE_SERVICE_ROLE_KEY');
+    $bucket = (string) ($request->input('bucket') ?: env('SUPABASE_STORAGE_BUCKET', 'test-images'));
+
+    if ($supabaseUrl === '' || $serviceKey === '') {
+        return response()->json([
+            'message' => 'Supabase credentials are missing. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.',
+        ], 500);
+    }
+
+    $file = $request->file('image');
+    $extension = $file->getClientOriginalExtension() ?: 'jpg';
+    $path = 'tests/' . now()->format('Ymd_His') . '_' . Str::random(8) . '.' . strtolower($extension);
+    $encodedPath = implode('/', array_map('rawurlencode', explode('/', $path)));
+
+    $httpClient = Http::withHeaders([
+        'Authorization' => 'Bearer ' . $serviceKey,
+        'apikey' => $serviceKey,
+    ]);
+
+    if (app()->environment('local')) {
+        $httpClient = $httpClient->withoutVerifying();
+    }
+
+    $uploadClient = $httpClient->withHeaders([
+        'x-upsert' => 'true',
+        'Content-Type' => $file->getMimeType() ?: 'application/octet-stream',
+    ]);
+
+    /** @var \Illuminate\Http\Client\Response $uploadResponse */
+    $uploadResponse = $uploadClient->withBody(
+        file_get_contents($file->getRealPath()),
+        $file->getMimeType() ?: 'application/octet-stream'
+    )->post("{$supabaseUrl}/storage/v1/object/{$bucket}/{$encodedPath}");
+
+    if ($uploadResponse->status() === 404) {
+        $errorMessage = strtolower((string) data_get($uploadResponse->json(), 'message', ''));
+
+        if (str_contains($errorMessage, 'bucket not found')) {
+            // Debug helper: create the missing bucket automatically and retry once.
+            /** @var \Illuminate\Http\Client\Response $createBucketResponse */
+            $createBucketResponse = $httpClient->post("{$supabaseUrl}/storage/v1/bucket", [
+                'id' => $bucket,
+                'name' => $bucket,
+                'public' => true,
+            ]);
+
+            if ($createBucketResponse->successful() || $createBucketResponse->status() === 409) {
+                $uploadResponse = $uploadClient->withBody(
+                    file_get_contents($file->getRealPath()),
+                    $file->getMimeType() ?: 'application/octet-stream'
+                )->post("{$supabaseUrl}/storage/v1/object/{$bucket}/{$encodedPath}");
+            }
+        }
+    }
+
+    if (! $uploadResponse->successful()) {
+        return response()->json([
+            'message' => 'Supabase upload failed.',
+            'bucket' => $bucket,
+            'details' => $uploadResponse->json() ?: $uploadResponse->body(),
+            'hint' => 'Create this bucket in Supabase Storage or pass a different bucket name in request field "bucket".',
+        ], $uploadResponse->status() ?: 500);
+    }
+
+    return response()->json([
+        'message' => 'Image uploaded to Supabase successfully.',
+        'bucket' => $bucket,
+        'path' => $path,
+        'public_url' => "{$supabaseUrl}/storage/v1/object/public/{$bucket}/{$encodedPath}",
+        'test_get_url' => url('/api/test-supabase/image/' . $encodedPath) . '?bucket=' . rawurlencode($bucket),
+    ]);
+});
+
+// Debug: Fetch image bytes from Supabase Storage through backend
+Route::get('/test-supabase/image/{path}', function (Request $request, string $path) {
+    $supabaseUrl = rtrim((string) env('SUPABASE_URL'), '/');
+    $serviceKey = (string) env('SUPABASE_SERVICE_ROLE_KEY');
+    $bucket = (string) ($request->query('bucket') ?: env('SUPABASE_STORAGE_BUCKET', 'test-images'));
+
+    if ($supabaseUrl === '' || $serviceKey === '') {
+        return response()->json([
+            'message' => 'Supabase credentials are missing. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.',
+        ], 500);
+    }
+
+    $httpClient = Http::withHeaders([
+        'Authorization' => 'Bearer ' . $serviceKey,
+        'apikey' => $serviceKey,
+    ]);
+
+    if (app()->environment('local')) {
+        $httpClient = $httpClient->withoutVerifying();
+    }
+
+    /** @var \Illuminate\Http\Client\Response $getResponse */
+    $getResponse = $httpClient->get("{$supabaseUrl}/storage/v1/object/{$bucket}/{$path}");
+
+    if (! $getResponse->successful()) {
+        return response()->json([
+            'message' => 'Supabase fetch failed.',
+            'bucket' => $bucket,
+            'details' => $getResponse->json() ?: $getResponse->body(),
+        ], $getResponse->status() ?: 500);
+    }
+
+    return response($getResponse->body(), 200, [
+        'Content-Type' => $getResponse->header('Content-Type', 'application/octet-stream'),
+        'Cache-Control' => 'no-store',
+    ]);
+})->where('path', '.*');
 
 // Health check endpoint for Render
 Route::get('/health', function () {

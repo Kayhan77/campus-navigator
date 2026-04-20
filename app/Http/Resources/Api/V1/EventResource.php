@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Services\SupabaseStorageService;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class EventResource extends JsonResource
@@ -18,7 +19,7 @@ class EventResource extends JsonResource
             'id'                    => $this->id,
             'title'                 => $this->title,
             'description'           => $this->description,
-            'image'                 => $this->image ? asset('storage/' . $this->image) : null,
+            'image'                 => SupabaseStorageService::publicUrl($this->image),
             'location'              => $this->location,
             'location_override'     => $this->location_override,
             'status'                => $this->status,
