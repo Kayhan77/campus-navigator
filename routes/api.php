@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\Admin\AdminDashboardController;
 use App\Http\Controllers\Api\V1\Admin\AdminEventController;
 use App\Http\Controllers\Api\V1\Admin\AdminNewsController;
 use App\Http\Controllers\Api\V1\Admin\AdminAnnouncementController;
+use App\Http\Controllers\Api\V1\Admin\AdminNotificationController;
 use App\Http\Controllers\Api\V1\Admin\AdminRoomController;
 use App\Http\Controllers\Api\V1\Admin\AdminUserController;
 use App\Http\Controllers\Api\V1\AnnouncementController;
@@ -339,6 +340,10 @@ Route::middleware(['auth:api', 'admin'])->prefix('v1/admin')->group(function () 
     
     // News management
     Route::apiResource('news', AdminNewsController::class);
+
+    // Notification management
+    Route::post('/notifications', [AdminNotificationController::class, 'send']);
+    Route::post('/notifications/send', [AdminNotificationController::class, 'send']);
 
 });
 
