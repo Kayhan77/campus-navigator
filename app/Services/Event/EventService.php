@@ -10,7 +10,6 @@ use App\Models\Event;
 use App\Models\Room;
 use App\Models\User;
 use App\Services\Cache\CacheTags;
-use App\Services\FirebaseService;
 use App\Services\Search\SearchCacheService;
 use App\Services\SupabaseStorageService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -26,7 +25,7 @@ class EventService
 
     public function __construct(
         private readonly SearchCacheService $cache,
-        private readonly FirebaseService $firebase,
+        private readonly \App\Services\Notification\NotificationService $notificationService,
         private readonly SupabaseStorageService $supabaseStorage
     ) {}
 
@@ -188,10 +187,13 @@ class EventService
 
             $event = Event::create(array_merge($data, ['created_by' => $userId]));
 
-            $this->notifyUsers(
+            // Send and store notification via central NotificationService
+            $this->notificationService->sendAndStoreNotification(
                 title: 'New Event Created',
-                body: $event->title,
-                data: ['type' => 'event', 'id' => (string) $event->id]
+                message: $event->title,
+                type: 'event',
+                data: ['event_id' => (int) $event->id],
+                senderId: $userId
             );
 
             return $event->fresh();
@@ -240,10 +242,13 @@ class EventService
             $event->update($data);
             $updated = $event->fresh();
 
-            $this->notifyUsers(
+            // Send and store notification via central NotificationService
+            $this->notificationService->sendAndStoreNotification(
                 title: 'Event Updated',
-                body: $updated->title,
-                data: ['type' => 'event', 'id' => (string) $updated->id]
+                message: $updated->title,
+                type: 'event',
+                data: ['event_id' => (int) $updated->id],
+                senderId: auth('api')->id()
             );
 
             return $updated;
@@ -328,21 +333,9 @@ class EventService
 
     private function notifyUsers(string $title, string $body, array $data = []): void
     {
-        User::query()
-            ->whereHas('deviceTokens')
-            ->with('deviceTokens:id,user_id,token')
-            ->chunkById(200, function ($users) use ($title, $body, $data): void {
-                foreach ($users as $user) {
-                    try {
-                        $this->firebase->sendToUser($user, $title, $body, $data);
-                    } catch (Throwable $e) {
-                        $this->logServiceError('event_notification_failed', $e, [
-                            'recipient_user_id' => $user->id,
-                            'title' => $title,
-                        ]);
-                    }
-                }
-            });
+        // DEPRECATED: Use NotificationService::sendAndStoreNotification() instead.
+        // This method is kept temporarily for backward compatibility but should not be called.
+        // All notifications must be stored in the database via the central NotificationService.
     }
 
     private function logServiceError(string $operation, Throwable $e, array $context = []): void

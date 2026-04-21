@@ -5,8 +5,6 @@ namespace App\Services\News;
 use App\DTOs\News\CreateNewsDTO;
 use App\DTOs\News\UpdateNewsDTO;
 use App\Models\News;
-use App\Models\User;
-use App\Services\FirebaseService;
 use App\Services\SupabaseStorageService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
@@ -15,7 +13,7 @@ use Illuminate\Support\Facades\Log;
 class NewsService
 {
         public function __construct(
-            private readonly FirebaseService $firebase,
+            private readonly \App\Services\Notification\NotificationService $notificationService,
             private readonly SupabaseStorageService $supabaseStorage
         ) {}
 
@@ -75,10 +73,12 @@ class NewsService
         $news = News::create($data);
 
         if ($news->is_published) {
-            $this->notifyUsers(
+            // Send and store notification via central NotificationService
+            $this->notificationService->sendAndStoreNotification(
                 title: 'News Published',
-                body: $news->title,
-                data: ['type' => 'news', 'id' => (string) $news->id]
+                message: $news->title,
+                type: 'news',
+                data: ['news_id' => (int) $news->id]
             );
         }
 
@@ -112,10 +112,12 @@ class NewsService
         $updated = $news->fresh();
 
         if (! $wasPublished && $updated->is_published) {
-            $this->notifyUsers(
+            // Send and store notification via central NotificationService
+            $this->notificationService->sendAndStoreNotification(
                 title: 'News Published',
-                body: $updated->title,
-                data: ['type' => 'news', 'id' => (string) $updated->id]
+                message: $updated->title,
+                type: 'news',
+                data: ['news_id' => (int) $updated->id]
             );
         }
 
@@ -150,13 +152,8 @@ class NewsService
 
     private function notifyUsers(string $title, string $body, array $data = []): void
     {
-        User::query()
-            ->whereHas('deviceTokens')
-            ->with('deviceTokens:id,user_id,token')
-            ->chunkById(200, function ($users) use ($title, $body, $data): void {
-                foreach ($users as $user) {
-                    $this->firebase->sendToUser($user, $title, $body, $data);
-                }
-            });
+        // DEPRECATED: Use NotificationService::sendAndStoreNotification() instead.
+        // This method is kept temporarily for backward compatibility but should not be called.
+        // All notifications must be stored in the database via the central NotificationService.
     }
 }

@@ -8,7 +8,7 @@ use App\Models\ItemClaim;
 use App\Filters\LostFoundFilter;
 use App\Models\LostItem;
 use App\Services\Cache\CacheTags;
-use App\Services\FirebaseService;
+use App\Services\Notification\NotificationService;
 use App\Services\Search\SearchCacheService;
 use App\Services\SupabaseStorageService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -19,7 +19,7 @@ class LostItemService
 {
     public function __construct(
         private readonly SearchCacheService $cache,
-        private readonly FirebaseService $firebase,
+        private readonly NotificationService $notificationService,
         private readonly SupabaseStorageService $supabaseStorage
     ) {}
 
@@ -135,20 +135,26 @@ class LostItemService
 
     private function notifyClaimantsItemResolved(LostItem $item): void
     {
-        ItemClaim::query()
+        $recipientIds = ItemClaim::query()
             ->where('lost_item_id', $item->id)
-            ->with('user.deviceTokens:id,user_id,token')
             ->get()
-            ->pluck('user')
+            ->pluck('user_id')
             ->filter()
-            ->unique('id')
-            ->each(function ($user) use ($item): void {
-                $this->firebase->sendToUser(
-                    $user,
-                    'Lost Item Resolved',
-                    $item->title,
-                    ['type' => 'lost_found', 'id' => (string) $item->id]
-                );
-            });
+            ->unique()
+            ->values()
+            ->all();
+
+        if (empty($recipientIds)) {
+            return;
+        }
+
+        $this->notificationService->sendAndStoreNotification(
+            title: 'Lost Item Resolved',
+            message: $item->title,
+            type: 'system',
+            data: ['context' => 'lost_found', 'lost_item_id' => (int) $item->id],
+            userIds: $recipientIds,
+            senderId: $item->user_id
+        );
     }
 }

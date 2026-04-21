@@ -26,7 +26,13 @@ class FirebaseService
         }
     }
 
-    public function sendNotification(?string $token, string $title, string $body, array $data = []): void
+    public function sendNotification(
+        ?string $token,
+        string $title,
+        string $body,
+        array $data = [],
+        bool $throwOnError = false
+    ): void
     {
         if (empty($token)) {
             return;
@@ -68,6 +74,10 @@ class FirebaseService
             Log::warning('[FCM HTTP v1] Notification send failed', [
                 'error' => $e->getMessage(),
             ]);
+
+            if ($throwOnError) {
+                throw $e;
+            }
         }
     }
 

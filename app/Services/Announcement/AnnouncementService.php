@@ -5,8 +5,6 @@ namespace App\Services\Announcement;
 use App\DTOs\Announcement\CreateAnnouncementDTO;
 use App\DTOs\Announcement\UpdateAnnouncementDTO;
 use App\Models\Announcement;
-use App\Models\User;
-use App\Services\FirebaseService;
 use App\Services\SupabaseStorageService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\UploadedFile;
@@ -14,7 +12,7 @@ use Illuminate\Http\UploadedFile;
 class AnnouncementService
 {
         public function __construct(
-            private readonly FirebaseService $firebase,
+            private readonly \App\Services\Notification\NotificationService $notificationService,
             private readonly SupabaseStorageService $supabaseStorage
         ) {}
 
@@ -70,10 +68,12 @@ class AnnouncementService
 
         $announcement = Announcement::create($data);
 
-        $this->notifyUsers(
+        // Send and store notification via central NotificationService
+        $this->notificationService->sendAndStoreNotification(
             title: 'New Announcement',
-            body: $announcement->title,
-            data: ['type' => 'announcement', 'id' => (string) $announcement->id]
+            message: $announcement->title,
+            type: 'announcement',
+            data: ['announcement_id' => (int) $announcement->id]
         );
 
         return $announcement;
@@ -134,13 +134,8 @@ class AnnouncementService
 
     private function notifyUsers(string $title, string $body, array $data = []): void
     {
-        User::query()
-            ->whereHas('deviceTokens')
-            ->with('deviceTokens:id,user_id,token')
-            ->chunkById(200, function ($users) use ($title, $body, $data): void {
-                foreach ($users as $user) {
-                    $this->firebase->sendToUser($user, $title, $body, $data);
-                }
-            });
+        // DEPRECATED: Use NotificationService::sendAndStoreNotification() instead.
+        // This method is kept temporarily for backward compatibility but should not be called.
+        // All notifications must be stored in the database via the central NotificationService.
     }
 }

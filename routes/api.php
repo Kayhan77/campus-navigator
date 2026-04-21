@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\V1\Auth\PreRegisterController;
 use App\Http\Controllers\Api\V1\Auth\RefreshTokenController;
 use App\Http\Controllers\Api\V1\BuildingController;
 use App\Http\Controllers\Api\V1\DeviceTokenController;
+use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\NotificationPreferencesController;
 use App\Http\Controllers\Api\V1\Event\EventController;
 use App\Http\Controllers\Api\V1\Event\EventCalendarController;
@@ -224,8 +225,6 @@ Route::prefix('v1')->group(function () {
     Route::post('/forgot-password', [PasswordResetOtpController::class, 'send'])
         ->middleware('throttle:5,1');
     Route::post('/reset-password', [NewPasswordOtpController::class, 'reset']);
-
-
     Route::get('/buildings',         [BuildingController::class, 'index']);
     Route::get('/buildings/{building}', [BuildingController::class, 'show']);
 
@@ -252,11 +251,13 @@ Route::prefix('v1')->group(function () {
 Route::middleware('auth:api')->get('/test-fcm', function (Request $request) {
     $user = $request->user();
 
-    app(\App\Services\FirebaseService::class)->sendToUser(
-        $user,
-        'Test Title',
-        'Hello from backend',
-        ['type' => 'test']
+    app(\App\Services\Notification\NotificationService::class)->sendAndStoreNotification(
+        title: 'Test Title',
+        message: 'Hello from backend',
+        type: 'system',
+        data: ['context' => 'test_fcm'],
+        userIds: [$user->id],
+        senderId: $user->id
     );
 
     return 'sent';
@@ -294,6 +295,13 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
     Route::get('/notification-preferences',    [NotificationPreferencesController::class, 'show']);
     Route::patch('/notification-preferences',  [NotificationPreferencesController::class, 'update']);
     Route::delete('/notification-preferences', [NotificationPreferencesController::class, 'destroy']);
+
+    // User notifications
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::get('/notifications/{notification}', [NotificationController::class, 'show']);
+    Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/mark-all-as-read', [NotificationController::class, 'markAllAsRead']);
 
 });
 
@@ -346,4 +354,3 @@ Route::middleware(['auth:api', 'admin'])->prefix('v1/admin')->group(function () 
     Route::post('/notifications/send', [AdminNotificationController::class, 'send']);
 
 });
-

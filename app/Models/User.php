@@ -64,6 +64,22 @@ class User extends Authenticatable implements JWTSubject
     }
 
     /**
+     * Notifications sent by this user (if they are an admin).
+     */
+    public function notificationsSent()
+    {
+        return $this->hasMany(Notification::class, 'sender_id');
+    }
+
+    /**
+     * Notification recipients records for this user.
+     */
+    public function notificationRecipients()
+    {
+        return $this->hasMany(NotificationRecipient::class);
+    }
+
+    /**
      * Push notification preferences stored as a JSON object.
      *
      * Returns an array with defaults merged in so callers never need
