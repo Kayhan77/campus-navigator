@@ -23,7 +23,7 @@ class NewsPolicy
      */
     public function create(User $user): bool
     {
-        return $this->canManageContent($user);
+        return $this->canByPermission($user, 'create_news');
     }
 
     /**
@@ -31,7 +31,7 @@ class NewsPolicy
      */
     public function update(User $user, News $news): bool
     {
-        return $this->canManageContent($user);
+        return $this->canByPermission($user, 'create_news');
     }
 
     /**
@@ -39,6 +39,6 @@ class NewsPolicy
      */
     public function delete(User $user, News $news): bool
     {
-        return $this->canManageContent($user);
+        return $this->canByPermission($user, 'create_news');
     }
 }

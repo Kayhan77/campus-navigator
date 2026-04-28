@@ -38,7 +38,7 @@ class AdminAnnouncementController extends Controller
     {
         $this->authorize('create', Announcement::class);
         $dto             = CreateAnnouncementDTO::fromRequest($request);
-        $announcement = $this->service->create($dto, $request->file('image'));
+        $announcement = $this->service->create($dto, (int) $request->user()->id, $request->file('image'));
 
         return ApiResponse::success(new AnnouncementResource($announcement), 'Announcement created successfully.', 201);
     }
@@ -47,7 +47,7 @@ class AdminAnnouncementController extends Controller
     {
         $this->authorize('update', $announcement);
         $dto     = UpdateAnnouncementDTO::fromRequest($request);
-        $updated = $this->service->update($announcement, $dto, $request->file('image'));
+        $updated = $this->service->update($announcement, $dto, (int) $request->user()->id, $request->file('image'));
 
         return ApiResponse::success(new AnnouncementResource($updated), 'Announcement updated successfully.');
     }

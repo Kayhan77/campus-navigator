@@ -38,7 +38,7 @@ class AdminNewsController extends Controller
     {
         $this->authorize('create', News::class);
         $dto  = CreateNewsDTO::fromRequest($request);
-        $news = $this->service->create($dto);
+        $news = $this->service->create($dto, (int) $request->user()->id);
 
         return ApiResponse::success(new NewsResource($news), 'News created successfully.', 201);
     }
@@ -47,7 +47,7 @@ class AdminNewsController extends Controller
     {
         $this->authorize('update', $news);
         $dto     = UpdateNewsDTO::fromRequest($request);
-        $updated = $this->service->update($news, $dto);
+        $updated = $this->service->update($news, $dto, (int) $request->user()->id);
 
         return ApiResponse::success(new NewsResource($updated), 'News updated successfully.');
     }

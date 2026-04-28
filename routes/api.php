@@ -22,11 +22,13 @@ use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\NotificationPreferencesController;
 use App\Http\Controllers\Api\V1\Event\EventController;
 use App\Http\Controllers\Api\V1\Event\EventCalendarController;
+use App\Http\Controllers\Api\V1\Event\EventRecommendationController;
 use App\Http\Controllers\Api\V1\NewsController;
 use App\Http\Controllers\Api\V1\LostFoundController;
 use App\Http\Controllers\Api\V1\ItemClaimController;
 use App\Http\Controllers\Api\V1\RoomController;
 use App\Http\Controllers\Api\V1\GlobalSearchController;
+use App\Http\Controllers\Api\V1\GlobalSearchSuggestionController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Http;
@@ -34,6 +36,27 @@ use Illuminate\Support\Str;
 use App\Http\Controllers\Api\V1\Auth\GoogleController;
 use Illuminate\Http\Request;
 
+Route::get('/test-groq', function () {
+
+    /** @var \Illuminate\Http\Client\Response $response */
+    $response = Http::withHeaders([
+        'Authorization' => 'Bearer ' . config('services.groq.key'),
+        'Content-Type' => 'application/json',
+    ])->post('https://api.groq.com/openai/v1/chat/completions', [
+        "model" => "llama-3.1-8b-instant",
+        "messages" => [
+            [
+                "role" => "user",
+                "content" => "Say hello and confirm you are working"
+            ]
+        ]
+    ]);
+
+    return $response->json();
+});
+
+
+   
 
 Route::get('/test-connection', function () {
     try {
@@ -45,16 +68,24 @@ Route::get('/test-connection', function () {
 
         return "Connected successfully!";
     } catch (\Exception $e) {
-        return $e->getMessage();
+        return [
+            "error" => $e->getMessage()
+        ];
     }
 });
 Route::get('/test-mail', function () {
-    Mail::raw('Test email', function ($msg) {
-        $msg->to('forreplit121@email.com')
-            ->subject('Test');
-    });
+    try {
+        Mail::raw('Test email', function ($msg) {
+            $msg->to('forreplit121@email.com')
+                ->subject('Test');
+        });
 
-    return 'Mail sent';
+        return 'Mail sent';
+    } catch (\Exception $e) {
+        return [
+            "error" => $e->getMessage()
+        ];
+    }
 });
 
 // Debug: Upload image to Supabase Storage and return test URLs
@@ -233,6 +264,7 @@ Route::prefix('v1')->group(function () {
 
     Route::get('/events',            [EventController::class, 'index']);
     Route::get('/events/{event}',    [EventController::class, 'show']);
+    Route::post('/events/recommendations', EventRecommendationController::class);
     Route::get('/calendar/events',   [EventCalendarController::class, 'index']);
 
     Route::get('/news',              [NewsController::class, 'index']);
@@ -246,6 +278,7 @@ Route::prefix('v1')->group(function () {
 
     // Global cross-model search
     Route::get('/search', GlobalSearchController::class);
+    Route::get('/search/suggestions', GlobalSearchSuggestionController::class);
 
 });
 Route::middleware('auth:api')->get('/test-fcm', function (Request $request) {
@@ -314,6 +347,10 @@ Route::middleware(['auth:api', 'admin'])->prefix('v1/admin')->group(function () 
     Route::get('/users',               [AdminUserController::class, 'index']);
     Route::get('/users/{user}',        [AdminUserController::class, 'show']);
     Route::patch('/users/{user}/role', [AdminUserController::class, 'updateRole']);
+
+    // RBAC management (super_admin only)
+    Route::post('/users/{user}/assign-role', [AdminUserController::class, 'assignRole']);
+    Route::put('/roles/{role}/permissions', [AdminUserController::class, 'syncRolePermissions']);
 
     // Event management
     Route::get('/events',              [AdminEventController::class, 'index']);

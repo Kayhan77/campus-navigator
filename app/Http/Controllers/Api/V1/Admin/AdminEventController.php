@@ -36,6 +36,7 @@ class AdminEventController extends Controller
 
     public function store(EventRequest $request)
     {
+        $this->authorize('create', Event::class);
         $dto   = CreateEventDTO::fromRequest($request);
         $event = $this->service->create($dto, $request->user()->id, $request->file('image'));
 
@@ -44,6 +45,7 @@ class AdminEventController extends Controller
 
     public function update(UpdateEventRequest $request, Event $event)
     {
+        $this->authorize('update', $event);
         $dto     = UpdateEventDTO::fromRequest($request);
         $updated = $this->service->update($event, $dto, $request->file('image'));
 
@@ -52,6 +54,7 @@ class AdminEventController extends Controller
 
     public function destroy(Event $event)
     {
+        $this->authorize('delete', $event);
         $this->service->delete($event);
 
         return ApiResponse::success(null, 'Event deleted successfully.');

@@ -12,6 +12,11 @@ trait AuthorizesByRole
         return $user->hasAnyRole(UserRole::adminRoles());
     }
 
+    protected function canByPermission(User $user, string $permission): bool
+    {
+        return $user->hasPermission($permission);
+    }
+
     protected function isSuperAdmin(User $user): bool
     {
         return $user->hasRole(UserRole::SuperAdmin);

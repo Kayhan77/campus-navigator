@@ -33,7 +33,7 @@ class ContentCreationNotificationTest extends TestCase
 
         $firebaseMock = Mockery::mock(FirebaseService::class);
         $firebaseMock->shouldReceive('sendNotification')->andReturn(null);
-
+    
         $notificationService = new NotificationService($firebaseMock);
         $cacheMock = Mockery::mock(SearchCacheService::class);
         $storageMock = Mockery::mock(SupabaseStorageService::class);
@@ -70,6 +70,7 @@ class ContentCreationNotificationTest extends TestCase
     #[Test]
     public function news_creation_creates_stored_notification(): void
     {
+        $actor = User::factory()->create();
         User::factory()->count(2)->create();
 
         $firebaseMock = Mockery::mock(FirebaseService::class);
@@ -87,7 +88,7 @@ class ContentCreationNotificationTest extends TestCase
             published_at: Carbon::now()
         );
 
-        $news = $service->create($dto);
+        $news = $service->create($dto, $actor->id);
 
         $notification = Notification::query()->where('type', 'news')->latest('id')->first();
 
@@ -98,6 +99,7 @@ class ContentCreationNotificationTest extends TestCase
     #[Test]
     public function announcement_creation_creates_stored_notification(): void
     {
+        $actor = User::factory()->create();
         User::factory()->count(2)->create();
 
         $firebaseMock = Mockery::mock(FirebaseService::class);
@@ -116,7 +118,7 @@ class ContentCreationNotificationTest extends TestCase
             published_at: Carbon::now()
         );
 
-        $announcement = $service->create($dto);
+        $announcement = $service->create($dto, $actor->id);
 
         $notification = Notification::query()->where('type', 'announcement')->latest('id')->first();
 

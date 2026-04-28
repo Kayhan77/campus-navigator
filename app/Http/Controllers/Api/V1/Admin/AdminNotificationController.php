@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SendAdminNotificationRequest;
+use App\Models\Notification;
 use App\Services\Admin\AdminNotificationService;
 
 class AdminNotificationController extends Controller
@@ -15,6 +16,8 @@ class AdminNotificationController extends Controller
 
     public function send(SendAdminNotificationRequest $request)
     {
+        $this->authorize('send', Notification::class);
+
         $result = $this->service->sendAdminNotification(
             title: $request->validated('title'),
             body: $request->validated('body'),

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -18,7 +19,7 @@ class SuperAdminSeeder extends Seeder
             return;
         }
 
-        User::create([
+        $user = User::create([
             'name'              => 'Super Admin',
             'email'             => $email,
             'password'          => Hash::make(env('SUPER_ADMIN_PASSWORD', 'Sup3rS3cure!')),
@@ -26,6 +27,9 @@ class SuperAdminSeeder extends Seeder
             'is_verified'       => true,
             'email_verified_at' => now(),
         ]);
+
+        $role = Role::query()->firstOrCreate(['name' => 'super_admin']);
+        $user->roles()->sync([$role->id]);
 
         $this->command->info("Super admin created: {$email}");
     }

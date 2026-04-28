@@ -13,6 +13,7 @@ use App\Models\Room;
 use App\Models\News;
 use App\Models\LostItem;
 use App\Models\ItemClaim;
+use App\Models\Notification;
 use App\Policies\EventPolicy;
 use App\Policies\BuildingPolicy;
 use App\Policies\RoomPolicy;
@@ -21,6 +22,7 @@ use App\Policies\AnnouncementPolicy;
 use App\Policies\NewsPolicy;
 use App\Policies\LostItemPolicy;
 use App\Policies\ItemClaimPolicy;
+use App\Policies\NotificationPolicy;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -38,6 +40,7 @@ class AuthServiceProvider extends ServiceProvider
         News::class => NewsPolicy::class,
         LostItem::class => LostItemPolicy::class,
         ItemClaim::class => ItemClaimPolicy::class,
+        Notification::class => NotificationPolicy::class,
     ];
 
     /**

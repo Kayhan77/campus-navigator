@@ -23,7 +23,7 @@ class EventPolicy
      */
     public function create(User $user): bool
     {
-        return $this->canManageContent($user);
+        return $this->canByPermission($user, 'create_event');
     }
 
     /**
@@ -31,7 +31,7 @@ class EventPolicy
      */
     public function update(User $user, Event $event): bool
     {
-        return $this->canManageContent($user);
+        return $this->canByPermission($user, 'create_event');
     }
 
     /**
@@ -39,6 +39,6 @@ class EventPolicy
      */
     public function delete(User $user, Event $event): bool
     {
-        return $this->canManageContent($user);
+        return $this->canByPermission($user, 'create_event');
     }
 }

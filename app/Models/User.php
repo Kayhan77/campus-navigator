@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Enums\UserRole;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
@@ -71,6 +73,36 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(Notification::class, 'sender_id');
     }
 
+    public function newsCreated()
+    {
+        return $this->hasMany(News::class, 'created_by');
+    }
+
+    public function newsUpdated()
+    {
+        return $this->hasMany(News::class, 'updated_by');
+    }
+
+    public function newsPublished()
+    {
+        return $this->hasMany(News::class, 'published_by');
+    }
+
+    public function announcementsCreated()
+    {
+        return $this->hasMany(Announcement::class, 'created_by');
+    }
+
+    public function announcementsUpdated()
+    {
+        return $this->hasMany(Announcement::class, 'updated_by');
+    }
+
+    public function announcementsPublished()
+    {
+        return $this->hasMany(Announcement::class, 'published_by');
+    }
+
     /**
      * Notification recipients records for this user.
      */
@@ -115,6 +147,19 @@ class User extends Authenticatable implements JWTSubject
         return [];
     }
 
+    public function roles(): BelongsToMany
+    {
+        return $this->belongsToMany(Role::class, 'user_role')
+            ->withTimestamps();
+    }
+
+    public function permissions(): Builder
+    {
+        return Permission::query()->whereHas('roles.users', function (Builder $query): void {
+            $query->where('users.id', $this->getKey());
+        });
+    }
+
     public function roleEnum(): UserRole
     {
         if ($this->role instanceof UserRole) {
@@ -126,13 +171,21 @@ class User extends Authenticatable implements JWTSubject
 
     public function hasRole(UserRole|string $role): bool
     {
-        $expected = $role instanceof UserRole ? $role : UserRole::tryFrom($role);
+        $roleValue = $role instanceof UserRole ? $role->value : trim((string) $role);
 
-        if ($expected === null) {
+        if ($roleValue === '') {
             return false;
         }
 
-        return $this->roleEnum() === $expected;
+        if ($this->roleEnum()->value === $roleValue) {
+            return true;
+        }
+
+        if ($this->relationLoaded('roles')) {
+            return $this->roles->contains('name', $roleValue);
+        }
+
+        return $this->roles()->where('name', $roleValue)->exists();
     }
 
     /**
@@ -149,6 +202,25 @@ class User extends Authenticatable implements JWTSubject
         return false;
     }
 
+    public function hasPermission(string $permission): bool
+    {
+        $permission = trim($permission);
+
+        if ($permission === '') {
+            return false;
+        }
+
+        if ($this->hasRole(UserRole::SuperAdmin)) {
+            return true;
+        }
+
+        if ($this->permissions()->where('name', $permission)->exists()) {
+            return true;
+        }
+
+        return in_array($permission, $this->legacyPermissionMap(), true);
+    }
+
     public function isSuperAdmin(): bool
     {
         return $this->hasRole(UserRole::SuperAdmin);
@@ -157,5 +229,41 @@ class User extends Authenticatable implements JWTSubject
     public function isUser(): bool
     {
         return $this->hasRole(UserRole::User);
+    }
+
+    /**
+     * Legacy role/is_admin compatibility layer while pivot-based RBAC is adopted.
+     *
+     * @return array<int, string>
+     */
+    private function legacyPermissionMap(): array
+    {
+        if ((bool) ($this->attributes['is_admin'] ?? false)) {
+            return [
+                'create_event',
+                'create_news',
+                'create_announcement',
+                'send_notification',
+                'manage_users',
+            ];
+        }
+
+        return match ($this->roleEnum()) {
+            UserRole::SuperAdmin => [
+                'create_event',
+                'create_news',
+                'create_announcement',
+                'send_notification',
+                'manage_users',
+            ],
+            UserRole::Admin => [
+                'create_event',
+                'create_news',
+                'create_announcement',
+                'send_notification',
+            ],
+            UserRole::SubAdmin => [],
+            default => [],
+        };
     }
 }

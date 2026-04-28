@@ -18,6 +18,11 @@ class NewsService
         ) {}
 
     private const IMAGE_PATH = 'news';
+    private const AUDIT_RELATIONS = [
+        'createdBy:id,name,email',
+        'updatedBy:id,name,email',
+        'publishedBy:id,name,email',
+    ];
 
     // -------------------------------------------------------------------------
     // Listings
@@ -30,6 +35,7 @@ class NewsService
     {
         return News::query()
             ->where('is_published', true)
+            ->with(self::AUDIT_RELATIONS)
             ->orderByDesc('created_at')
             ->get();
     }
@@ -39,7 +45,7 @@ class NewsService
      */
     public function listAdminPaginated(int $perPage = 15): LengthAwarePaginator
     {
-        return News::latest()->paginate($perPage);
+        return News::query()->with(self::AUDIT_RELATIONS)->latest()->paginate($perPage);
     }
 
     // -------------------------------------------------------------------------
@@ -48,7 +54,7 @@ class NewsService
 
     public function getById(News $news): News
     {
-        return $news;
+        return $news->load(self::AUDIT_RELATIONS);
     }
 
     // -------------------------------------------------------------------------
@@ -58,9 +64,16 @@ class NewsService
     /**
      * Create news with image upload.
      */
-    public function create(CreateNewsDTO $dto): News
+    public function create(CreateNewsDTO $dto, int $actorId): News
     {
         $data = $dto->toArray();
+        $data['created_by'] = $actorId;
+        $data['updated_by'] = $actorId;
+
+        if (($data['is_published'] ?? true) === true) {
+            $data['published_by'] = $actorId;
+            $data['published_at'] = $data['published_at'] ?? now()->toDateTimeString();
+        }
 
         if ($dto->image !== null) {
             try {
@@ -78,17 +91,18 @@ class NewsService
                 title: 'News Published',
                 message: $news->title,
                 type: 'news',
-                data: ['news_id' => (int) $news->id]
+                data: ['news_id' => (int) $news->id],
+                senderId: $actorId
             );
         }
 
-        return $news;
+        return $news->fresh(self::AUDIT_RELATIONS);
     }
 
     /**
      * Update news with optional image replacement.
      */
-    public function update(News $news, UpdateNewsDTO $dto): News
+    public function update(News $news, UpdateNewsDTO $dto, int $actorId): News
     {
         $data = $dto->toArray();
 
@@ -107,9 +121,31 @@ class NewsService
         }
 
         $wasPublished = (bool) $news->is_published;
+        $willBePublished = array_key_exists('is_published', $data)
+            ? (bool) $data['is_published']
+            : $wasPublished;
+
+        $data['updated_by'] = $actorId;
+
+        if (! $wasPublished && $willBePublished) {
+            $data['published_by'] = $actorId;
+
+            if (! array_key_exists('published_at', $data) || $data['published_at'] === null) {
+                $data['published_at'] = now()->toDateTimeString();
+            }
+        }
+
+        if ($wasPublished && array_key_exists('is_published', $data) && $data['is_published'] === false) {
+            $data['published_by'] = null;
+            $data['published_at'] = null;
+        }
+
+        if ($willBePublished && $news->published_by === null && ! array_key_exists('published_by', $data)) {
+            $data['published_by'] = $actorId;
+        }
 
         $news->update($data);
-        $updated = $news->fresh();
+        $updated = $news->fresh(self::AUDIT_RELATIONS);
 
         if (! $wasPublished && $updated->is_published) {
             // Send and store notification via central NotificationService
@@ -117,7 +153,8 @@ class NewsService
                 title: 'News Published',
                 message: $updated->title,
                 type: 'news',
-                data: ['news_id' => (int) $updated->id]
+                data: ['news_id' => (int) $updated->id],
+                senderId: $actorId
             );
         }
 

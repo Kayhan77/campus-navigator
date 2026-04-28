@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\AssignRoleToUserRequest;
+use App\Http\Requests\Admin\SyncRolePermissionsRequest;
 use App\Http\Requests\Admin\UpdateUserRoleRequest;
 use App\Http\Resources\Api\V1\Admin\AdminUserResource;
 use App\Models\User;
@@ -43,5 +45,31 @@ class AdminUserController extends Controller
             new AdminUserResource($updated),
             'User role updated successfully.'
         );
+    }
+
+    public function assignRole(AssignRoleToUserRequest $request, User $user)
+    {
+        $updated = $this->service->assignRoleToUser(
+            (int) $user->id,
+            (string) $request->validated('role')
+        );
+
+        return ApiResponse::success(
+            new AdminUserResource($updated),
+            'Role assigned successfully.'
+        );
+    }
+
+    public function syncRolePermissions(SyncRolePermissionsRequest $request, string $role)
+    {
+        $permissions = $this->service->syncPermissionsToRole(
+            $role,
+            (array) $request->validated('permissions')
+        );
+
+        return ApiResponse::success([
+            'role' => $role,
+            'permissions' => $permissions,
+        ], 'Role permissions updated successfully.');
     }
 }

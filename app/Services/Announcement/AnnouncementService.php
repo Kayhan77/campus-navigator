@@ -17,6 +17,11 @@ class AnnouncementService
         ) {}
 
     private const IMAGE_PATH = 'announcements';
+    private const AUDIT_RELATIONS = [
+        'createdBy:id,name,email',
+        'updatedBy:id,name,email',
+        'publishedBy:id,name,email',
+    ];
 
     // -------------------------------------------------------------------------
     // Listings
@@ -29,6 +34,7 @@ class AnnouncementService
     {
         return Announcement::query()
             ->where('is_active', true)
+            ->with(self::AUDIT_RELATIONS)
             ->orderByDesc('is_pinned')
             ->orderByDesc('created_at')
             ->get();
@@ -39,7 +45,7 @@ class AnnouncementService
      */
     public function listAdminPaginated(int $perPage = 15): LengthAwarePaginator
     {
-        return Announcement::latest()->paginate($perPage);
+        return Announcement::query()->with(self::AUDIT_RELATIONS)->latest()->paginate($perPage);
     }
 
     // -------------------------------------------------------------------------
@@ -48,7 +54,7 @@ class AnnouncementService
 
     public function getById(Announcement $announcement): Announcement
     {
-        return $announcement;
+        return $announcement->load(self::AUDIT_RELATIONS);
     }
 
     // -------------------------------------------------------------------------
@@ -58,9 +64,16 @@ class AnnouncementService
     /**
      * Create announcement with image upload.
      */
-    public function create(CreateAnnouncementDTO $dto, ?UploadedFile $image = null): Announcement
+    public function create(CreateAnnouncementDTO $dto, int $actorId, ?UploadedFile $image = null): Announcement
     {
         $data = $dto->toArray();
+        $data['created_by'] = $actorId;
+        $data['updated_by'] = $actorId;
+
+        if (($data['is_active'] ?? true) === true) {
+            $data['published_by'] = $actorId;
+            $data['published_at'] = $data['published_at'] ?? now()->toDateTimeString();
+        }
 
         if ($image) {
             $data['image'] = $this->storeImage($image);
@@ -73,18 +86,42 @@ class AnnouncementService
             title: 'New Announcement',
             message: $announcement->title,
             type: 'announcement',
-            data: ['announcement_id' => (int) $announcement->id]
+            data: ['announcement_id' => (int) $announcement->id],
+            senderId: $actorId
         );
 
-        return $announcement;
+        return $announcement->fresh(self::AUDIT_RELATIONS);
     }
 
     /**
      * Update announcement with optional image replacement.
      */
-    public function update(Announcement $announcement, UpdateAnnouncementDTO $dto, ?UploadedFile $image = null): Announcement
+    public function update(Announcement $announcement, UpdateAnnouncementDTO $dto, int $actorId, ?UploadedFile $image = null): Announcement
     {
         $data = $dto->toArray();
+        $wasActive = (bool) $announcement->is_active;
+        $willBeActive = array_key_exists('is_active', $data)
+            ? (bool) $data['is_active']
+            : $wasActive;
+
+        $data['updated_by'] = $actorId;
+
+        if (! $wasActive && $willBeActive) {
+            $data['published_by'] = $actorId;
+
+            if (! array_key_exists('published_at', $data) || $data['published_at'] === null) {
+                $data['published_at'] = now()->toDateTimeString();
+            }
+        }
+
+        if ($wasActive && array_key_exists('is_active', $data) && $data['is_active'] === false) {
+            $data['published_by'] = null;
+            $data['published_at'] = null;
+        }
+
+        if ($willBeActive && $announcement->published_by === null && ! array_key_exists('published_by', $data)) {
+            $data['published_by'] = $actorId;
+        }
 
         // Handle image replacement
         if ($image) {
@@ -96,7 +133,7 @@ class AnnouncementService
         }
 
         $announcement->update($data);
-        return $announcement->fresh();
+        return $announcement->fresh(self::AUDIT_RELATIONS);
     }
 
     /**

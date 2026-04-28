@@ -6,6 +6,7 @@ enum UserRole: string
 {
     case User = 'user';
     case Admin = 'admin';
+    case SubAdmin = 'sub_admin';
     case SuperAdmin = 'super_admin';
 
     /**
@@ -23,7 +24,7 @@ enum UserRole: string
      */
     public static function adminRoles(): array
     {
-        return [self::Admin, self::SuperAdmin];
+        return [self::Admin, self::SubAdmin, self::SuperAdmin];
     }
 
     public function isAdminLevel(): bool
