@@ -4,12 +4,13 @@ namespace App\Models;
 
 use App\Traits\Filterable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 
 class Event extends Model
 {
-    use Filterable;
+    use Filterable, HasFactory;
 
     /**
      * Relations the client may request via ?include=room,building.

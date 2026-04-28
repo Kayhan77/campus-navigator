@@ -5,6 +5,7 @@ namespace App\Services\Auth;
 use App\DTOs\Auth\RegisterPendingDTO;
 use App\DTOs\Auth\VerifyCodeDTO;
 use App\Exceptions\ApiException;
+use App\Exceptions\DuplicateActionException;
 use App\Models\EmailVerificationOtp;
 use App\Models\PendingRegistration;
 use App\Models\User;
@@ -23,9 +24,19 @@ class PreRegisterService
     public function preRegister(RegisterPendingDTO $dto): PendingRegistration
     {
         try {
-            // Remove any stale records for this email
-            PendingRegistration::where('email', $dto->email)->delete();
-            EmailVerificationOtp::where('email', $dto->email)->delete();
+            // Check if email is already registered in users table
+            if (User::where('email', $dto->email)->exists()) {
+                throw new DuplicateActionException('Email is already registered.');
+            }
+
+            // Check if email is already in pending_registrations and still valid
+            $existingPending = PendingRegistration::where('email', $dto->email)->first();
+            if ($existingPending) {
+                // If there's an existing pending registration, delete it and start fresh
+                // This prevents stale records but still prevents rapid duplicate attempts
+                PendingRegistration::where('email', $dto->email)->delete();
+                EmailVerificationOtp::where('email', $dto->email)->delete();
+            }
 
             $pending = PendingRegistration::create([
                 'name'     => $dto->name,
@@ -47,6 +58,8 @@ class PreRegisterService
             $pending->notify(new VerifyEmailNotification($otp));
 
             return $pending;
+        } catch (DuplicateActionException $e) {
+            throw $e;
         } catch (ApiException|ValidationException $e) {
             throw $e;
         } catch (Throwable $e) {

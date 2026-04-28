@@ -5,6 +5,8 @@ namespace App\Services\Event;
 use App\DTOs\Event\CreateEventDTO;
 use App\DTOs\Event\UpdateEventDTO;
 use App\Exceptions\ApiException;
+use App\Exceptions\AlreadyRegisteredException;
+use App\Exceptions\EventFullException;
 use App\Filters\EventFilter;
 use App\Models\Event;
 use App\Models\Room;
@@ -83,6 +85,8 @@ class EventService
     /**
      * Register a user to an event with race-condition-safe capacity checks.
      * Uses atomic increment on persisted registered_users_count column.
+     * Throws AlreadyRegisteredException if user already registered.
+     * Throws EventFullException if event is at capacity.
      */
     public function registerUserToEvent(Event $event, User $user): void
     {
@@ -103,13 +107,13 @@ class EventService
                     ->exists();
 
                 if ($alreadyRegistered) {
-                    return;
+                    throw new AlreadyRegisteredException('You are already registered for this event.');
                 }
 
                 // null max_attendees means unlimited capacity.
                 if ($lockedEvent->max_attendees !== null) {
                     if ($lockedEvent->registered_users_count >= $lockedEvent->max_attendees) {
-                        throw new ApiException('Event is fully booked', 422);
+                        throw new EventFullException('This event has reached maximum capacity.');
                     }
                 }
 
