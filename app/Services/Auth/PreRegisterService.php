@@ -10,6 +10,7 @@ use App\Models\EmailVerificationOtp;
 use App\Models\PendingRegistration;
 use App\Models\User;
 use App\Notifications\VerifyEmailNotification;
+use Illuminate\Database\QueryException;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -29,13 +30,9 @@ class PreRegisterService
                 throw new DuplicateActionException('Email is already registered.');
             }
 
-            // Check if email is already in pending_registrations and still valid
-            $existingPending = PendingRegistration::where('email', $dto->email)->first();
-            if ($existingPending) {
-                // If there's an existing pending registration, delete it and start fresh
-                // This prevents stale records but still prevents rapid duplicate attempts
-                PendingRegistration::where('email', $dto->email)->delete();
-                EmailVerificationOtp::where('email', $dto->email)->delete();
+            // Check if email is already in pending_registrations
+            if (PendingRegistration::where('email', $dto->email)->exists()) {
+                throw new DuplicateActionException('Email is already pending verification.');
             }
 
             $pending = PendingRegistration::create([
@@ -58,6 +55,16 @@ class PreRegisterService
             $pending->notify(new VerifyEmailNotification($otp));
 
             return $pending;
+        } catch (QueryException $e) {
+            if ($this->isDuplicateKeyException($e)) {
+                throw new DuplicateActionException('Email is already registered or pending verification.');
+            }
+
+            $this->logServiceError('pre_register_database_error', $e, [
+                'email' => $dto->email,
+            ]);
+
+            throw new ApiException('Unable to complete registration at this time.', 500);
         } catch (DuplicateActionException $e) {
             throw $e;
         } catch (ApiException|ValidationException $e) {
@@ -192,5 +199,14 @@ class PreRegisterService
             'exception' => $e::class,
             'message' => $e->getMessage(),
         ], $context));
+    }
+
+    private function isDuplicateKeyException(QueryException $e): bool
+    {
+        $message = strtolower($e->getMessage());
+
+        return $e->getCode() === '23000'
+            || str_contains($message, 'duplicate')
+            || str_contains($message, 'unique');
     }
 }
