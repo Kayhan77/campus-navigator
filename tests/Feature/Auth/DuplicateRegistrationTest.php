@@ -89,6 +89,28 @@ class DuplicateRegistrationTest extends TestCase
     }
 
     /**
+     * Test: Logged-in users cannot pre-register again.
+     */
+    public function test_logged_in_user_cannot_pre_register(): void
+    {
+        /** @var User $loggedInUser */
+        $loggedInUser = User::factory()->create([
+            'email' => 'logged.in.user@gmail.com',
+        ]);
+
+        $response = $this->actingAs($loggedInUser, 'api')->postJson('/api/v1/pre-register', [
+            'name' => 'Logged In User',
+            'email' => 'another.email@gmail.com',
+            'password' => 'SecurePassword123!',
+            'password_confirmation' => 'SecurePassword123!',
+        ]);
+
+        $response->assertStatus(409);
+        $response->assertJsonPath('success', false);
+        $response->assertJsonPath('message', 'You are already logged in. Please log out before pre-registering a new account.');
+    }
+
+    /**
      * Test: Database unique constraint prevents race-condition duplicates.
      * This tests the idempotency guarantee at the database level.
      */

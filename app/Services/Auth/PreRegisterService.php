@@ -25,14 +25,20 @@ class PreRegisterService
     public function preRegister(RegisterPendingDTO $dto): PendingRegistration
     {
         try {
+            if (request()->user() !== null) {
+                throw new DuplicateActionException(
+                    'You are already logged in. Please log out before pre-registering a new account.'
+                );
+            }
+
             // Check if email is already registered in users table
             if (User::where('email', $dto->email)->exists()) {
-                throw new DuplicateActionException('Email is already registered.');
+                throw new DuplicateActionException('This email is already registered. Please log in instead.');
             }
 
             // Check if email is already in pending_registrations
             if (PendingRegistration::where('email', $dto->email)->exists()) {
-                throw new DuplicateActionException('Email is already pending verification.');
+                throw new DuplicateActionException('This email is already pending verification. Please verify it or request a new code.');
             }
 
             $pending = PendingRegistration::create([
@@ -57,7 +63,7 @@ class PreRegisterService
             return $pending;
         } catch (QueryException $e) {
             if ($this->isDuplicateKeyException($e)) {
-                throw new DuplicateActionException('Email is already registered or pending verification.');
+                throw new DuplicateActionException('This email is already registered or pending verification.');
             }
 
             $this->logServiceError('pre_register_database_error', $e, [

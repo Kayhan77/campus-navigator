@@ -27,17 +27,18 @@ class Handler extends ExceptionHandler
     public function register(): void
     {
         $this->reportable(function (Throwable $e): void {
-            if (! request()?->expectsJson()) {
+            $request = request();
+            if (! $request?->expectsJson() && ! $request?->is('api/*')) {
                 return;
             }
 
             logger()->error('Unhandled exception', [
                 'exception' => $e::class,
                 'message' => $e->getMessage(),
-                'user_id' => request()->user()?->id,
-                'path' => request()->path(),
-                'method' => request()->method(),
-                'request' => request()->except([
+                'user_id' => $request->user()?->id,
+                'path' => $request->path(),
+                'method' => $request->method(),
+                'request' => $request->except([
                     'password',
                     'password_confirmation',
                     'current_password',
@@ -52,7 +53,9 @@ class Handler extends ExceptionHandler
 
     public function render($request, Throwable $e)
     {
-        if (! $request->expectsJson()) {
+        $wantsJson = $request->expectsJson() || $request->is('api/*');
+
+        if (! $wantsJson) {
             return parent::render($request, $e);
         }
 
