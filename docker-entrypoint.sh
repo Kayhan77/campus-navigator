@@ -36,6 +36,9 @@ echo "⚡ Optimizing..."
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
+php artisan config:clear
+php artisan cache:clear
+php artisan optimize:clear
 
 php artisan storage:link || true
 echo "🌐 Starting server..."
