@@ -19,6 +19,7 @@ if [ -n "$DB_HOST" ]; then
         elapsed=$((elapsed + 2))
     done
 fi
+composer install --no-dev --optimize-autoloader
 
 echo "🔄 Running migrations..."
 php artisan migrate --force --no-interaction
@@ -30,15 +31,14 @@ php artisan migrate --force --no-interaction
 # php artisan db:seed --class=SuperAdminSeeder --force --no-interaction
 
 echo "⚡ Clearing caches..."
-php artisan optimize:clear
+php artisan optimize:clear || true
 
 echo "⚡ Optimizing..."
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 php artisan config:clear
-php artisan cache:clear
-php artisan optimize:clear
+php artisan cache:clear || true
 
 php artisan storage:link || true
 echo "🌐 Starting server..."
