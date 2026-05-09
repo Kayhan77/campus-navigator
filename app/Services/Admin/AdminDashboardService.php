@@ -10,10 +10,12 @@ use App\Models\News;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class AdminDashboardService
 {
     private const DASHBOARD_CACHE_KEY = 'admin_dashboard_stats';
+    private const TIMEZONE_OFFSET = '+03:00';
 
     /**
      * Aggregate stats for the admin dashboard.
@@ -75,10 +77,12 @@ class AdminDashboardService
 
     private function aggregatePerDay(string $modelClass, int $days = 30): Collection
     {
+        $dateExpression = $this->dateExpression();
+
         return $modelClass::query()
             ->where('created_at', '>=', now()->subDays($days))
-            ->selectRaw("DATE(CONVERT_TZ(created_at, '+00:00', '+03:00')) as date, COUNT(*) as total")
-            ->groupByRaw("DATE(CONVERT_TZ(created_at, '+00:00', '+03:00'))")
+            ->selectRaw("{$dateExpression} as date, COUNT(*) as total")
+            ->groupByRaw($dateExpression)
             ->orderBy('date')
             ->get()
             ->map(fn ($row) => [
@@ -89,16 +93,39 @@ class AdminDashboardService
 
     private function aggregatePerMonth(string $modelClass, int $months = 30): Collection
     {
+        $monthExpression = $this->monthExpression();
+
         return $modelClass::query()
             ->where('created_at', '>=', now()->subMonths($months))
-            ->selectRaw('YEAR(created_at) as year, MONTH(created_at) as month, COUNT(*) as total')
-            ->groupByRaw('YEAR(created_at), MONTH(created_at)')
-            ->orderBy('year')
+            ->selectRaw("{$monthExpression} as month, COUNT(*) as total")
+            ->groupByRaw($monthExpression)
             ->orderBy('month')
             ->get()
             ->map(fn ($row) => [
-                'month' => sprintf('%04d-%02d', (int) $row->year, (int) $row->month),
+                'month' => $row->month,
                 'total' => (int) $row->total,
             ]);
+    }
+
+    private function dateExpression(): string
+    {
+        $driver = DB::connection()->getDriverName();
+
+        return match ($driver) {
+            'pgsql' => "DATE(created_at AT TIME ZONE '" . self::TIMEZONE_OFFSET . "')",
+            'sqlite' => 'DATE(created_at)',
+            default => "DATE(CONVERT_TZ(created_at, '+00:00', '" . self::TIMEZONE_OFFSET . "'))",
+        };
+    }
+
+    private function monthExpression(): string
+    {
+        $driver = DB::connection()->getDriverName();
+
+        return match ($driver) {
+            'pgsql' => "TO_CHAR(created_at AT TIME ZONE '" . self::TIMEZONE_OFFSET . "', 'YYYY-MM')",
+            'sqlite' => "strftime('%Y-%m', created_at)",
+            default => "DATE_FORMAT(CONVERT_TZ(created_at, '+00:00', '" . self::TIMEZONE_OFFSET . "'), '%Y-%m')",
+        };
     }
 }
