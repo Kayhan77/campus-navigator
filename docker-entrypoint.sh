@@ -28,7 +28,7 @@ php artisan migrate --force --no-interaction
 # php artisan db:seed --class=RbacSeeder --force --no-interaction
 
 # echo "🌱 Running Super Admin Seeder..."
-# php artisan db:seed --class=SuperAdminSeeder --force --no-interaction
+php artisan db:seed --class=SuperAdminSeeder --force --no-interaction
 
 echo "⚡ Clearing caches..."
 php artisan optimize:clear 
