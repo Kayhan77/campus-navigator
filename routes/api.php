@@ -31,6 +31,7 @@ use App\Http\Controllers\Api\V1\GlobalSearchController;
 use App\Http\Controllers\Api\V1\GlobalSearchSuggestionController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use App\Http\Controllers\Api\V1\Auth\GoogleController;
@@ -80,11 +81,22 @@ Route::get('/test-mail', function () {
                 ->subject('Test');
         });
 
-        return 'Mail sent';
-    } catch (\Exception $e) {
-        return [
-            "error" => $e->getMessage()
-        ];
+        return response()->json([
+            'message' => 'Mail sent successfully'
+        ]);
+
+    } catch (\Throwable $e) {
+
+        // log full error in Render logs
+        Log::error('Mail test failed', [
+            'message' => $e->getMessage(),
+        ]);
+
+        // return clean response instead of crashing
+        return response()->json([
+            'error' => 'Mail failed',
+            'details' => $e->getMessage()
+        ], 500);
     }
 });
 
