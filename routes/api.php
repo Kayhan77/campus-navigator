@@ -37,6 +37,71 @@ use Illuminate\Support\Str;
 use App\Http\Controllers\Api\V1\Auth\GoogleController;
 use Illuminate\Http\Request;
 
+
+
+Route::get('/test', function () {
+    return response()->json([
+        'status' => 'ok',
+        'message' => 'Server is working',
+        'time' => now()
+    ]);
+});
+
+
+
+
+
+use Illuminate\Support\Facades\DB;
+
+Route::get('/test-db', function () {
+    return DB::select('SELECT 1 as test');
+});
+
+
+
+
+
+use Illuminate\Support\Facades\Redis;
+
+Route::get('/test-redis', function () {
+    Redis::set('test', 'hello');
+    return Redis::get('test');
+});
+
+
+
+
+
+
+
+
+Route::get('/test-http', function () {
+    $response = Http::get('https://jsonplaceholder.typicode.com/todos/1');
+
+    return $response->json();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Route::get('/test-groq', function () {
 
     /** @var \Illuminate\Http\Client\Response $response */
