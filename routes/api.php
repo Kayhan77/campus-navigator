@@ -47,6 +47,15 @@ Route::get('/test-mail', function () {
     ];
 });
 
+Route::get('/env-debug', function () {
+    return [
+        'APP_ENV' => env('APP_ENV'),
+        'MAIL_MAILER' => env('MAIL_MAILER'),
+        'MAIL_HOST' => env('MAIL_HOST'),
+        'MAIL_PORT' => env('MAIL_PORT'),
+    ];
+});
+
 
 Route::get('/test', function () {
     return response()->json([

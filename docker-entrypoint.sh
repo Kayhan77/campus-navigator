@@ -34,6 +34,10 @@ echo "⚡ Clearing caches..."
 
 php artisan optimize:clear
 
+echo  "remove cached config file to ensure it gets regenerated with correct values"
+"
+rm -rf bootstrap/cache/config.php
+
 echo "⚡ Caching config only..."
 
 php artisan config:cache
