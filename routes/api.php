@@ -39,6 +39,11 @@ use Illuminate\Http\Request;
 
 
 
+Route::get('/test-mail', function () {
+    return "before mail";
+});
+
+
 Route::get('/test', function () {
     return response()->json([
         'status' => 'ok',
