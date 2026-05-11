@@ -31,14 +31,12 @@ php artisan migrate --force --no-interaction
 # php artisan db:seed --class=SuperAdminSeeder --force --no-interaction
 
 echo "⚡ Clearing caches..."
-php artisan optimize:clear 
-php artisan config:clear
-php artisan cache:clear
 
-echo "⚡ Optimizing..."
+php artisan optimize:clear
+
+echo "⚡ Caching config only..."
+
 php artisan config:cache
-php artisan route:cache
-php artisan view:cache
 
 php artisan storage:link || true
 echo "🌐 Starting server..."
