@@ -144,31 +144,31 @@ Route::get('/test-connection', function () {
         ];
     }
 });
-Route::get('/test-mail', function () {
-    try {
-        Mail::raw('Test email', function ($msg) {
-            $msg->to('forreplit121@email.com')
-                ->subject('Test');
-        });
+// Route::get('/test-mail', function () {
+//     try {
+//         Mail::raw('Test email', function ($msg) {
+//             $msg->to('forreplit121@email.com')
+//                 ->subject('Test');
+//         });
 
-        return response()->json([
-            'message' => 'Mail sent successfully'
-        ]);
+//         return response()->json([
+//             'message' => 'Mail sent successfully'
+//         ]);
 
-    } catch (\Throwable $e) {
+//     } catch (\Throwable $e) {
 
-        // log full error in Render logs
-        Log::error('Mail test failed', [
-            'message' => $e->getMessage(),
-        ]);
+//         // log full error in Render logs
+//         Log::error('Mail test failed', [
+//             'message' => $e->getMessage(),
+//         ]);
 
-        // return clean response instead of crashing
-        return response()->json([
-            'error' => 'Mail failed',
-            'details' => $e->getMessage()
-        ], 500);
-    }
-});
+//         // return clean response instead of crashing
+//         return response()->json([
+//             'error' => 'Mail failed',
+//             'details' => $e->getMessage()
+//         ], 500);
+//     }
+// });
 
 // Debug: Upload image to Supabase Storage and return test URLs
 Route::post('/test-supabase/upload-image', function (Request $request) {
