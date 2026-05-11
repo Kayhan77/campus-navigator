@@ -39,12 +39,14 @@ use Illuminate\Http\Request;
 
 
 
-Route::get('/test-mail', function () {
-    return [
-        config('mail.mailer'),
-        config('mail.host'),
-        config('mail.port'),
-    ];
+Route::get('/test-email', function () {
+    // send a simple raw email to avoid relying on a TestMail mailable class
+    Mail::raw('This is a test email.', function ($message) {
+        $message->to('forreplit121@gmail.com')
+                ->subject('Test email');
+    });
+
+    return 'Test email sent';
 });
 
 Route::get('/env-debug', function () {
