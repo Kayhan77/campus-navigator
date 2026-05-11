@@ -32,6 +32,8 @@ php artisan migrate --force --no-interaction
 
 echo "⚡ Clearing caches..."
 php artisan optimize:clear 
+php artisan config:clear
+php artisan cache:clear
 
 echo "⚡ Optimizing..."
 php artisan config:cache
