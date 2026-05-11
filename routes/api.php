@@ -40,7 +40,11 @@ use Illuminate\Http\Request;
 
 
 Route::get('/test-mail', function () {
-    return "before mail";
+    return [
+        config('mail.mailer'),
+        config('mail.host'),
+        config('mail.port'),
+    ];
 });
 
 
