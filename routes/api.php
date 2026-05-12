@@ -38,6 +38,17 @@ use App\Http\Controllers\Api\V1\Auth\GoogleController;
 use Illuminate\Http\Request;
 
 
+Route::get('/firebase-test', function () {
+    $messaging = app('firebase.messaging');
+
+    return [
+        'status' => 'Firebase connected successfully'
+    ];
+});
+
+
+
+
 
 Route::get('/test-email', function () {
     // send a simple raw email to avoid relying on a TestMail mailable class
