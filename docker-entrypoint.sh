@@ -33,7 +33,7 @@ php artisan migrate --force --no-interaction
 # echo "🌱 Running User Seeder..."
 # php artisan db:seed --class=UserSeeder --force --no-interaction
 
-echo "🌱 Running CampusLocationSeeder..."
+echo "🔧 Running CampusLocationSeeder..."
 php artisan db:seed --class=CampusLocationSeeder --force --no-interaction
 
 echo "⚡ Clearing caches..."
