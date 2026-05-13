@@ -2,11 +2,12 @@
 
 namespace App\Services\Notification;
 
+use App\DTOs\Notification\NotificationPayload;
 use App\Models\DeviceToken;
 use App\Models\Notification;
 use App\Models\NotificationRecipient;
 use App\Models\User;
-use App\Services\FirebaseService;
+use App\Services\Notification\FirebaseNotificationService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -24,7 +25,7 @@ use Illuminate\Support\Facades\Log;
 class NotificationService
 {
     public function __construct(
-        private FirebaseService $firebase
+        private FirebaseNotificationService $firebase
     ) {}
 
     /**
@@ -200,6 +201,12 @@ class NotificationService
         $sent = 0;
         $failed = 0;
         $deliveredUserIds = [];
+        $payload = new NotificationPayload(
+            title: $notification->title,
+            body: $notification->message,
+            data: $data,
+            type: (string) $notification->type,
+        );
 
         if ($tokens->isEmpty()) {
             return [
@@ -210,16 +217,14 @@ class NotificationService
 
         foreach ($tokens as $token) {
             try {
-                $this->firebase->sendNotification(
-                    $token->token,
-                    $notification->title,
-                    $notification->message,
-                    $data,
-                    true
-                );
+                $delivered = $this->firebase->sendToToken($token->token, $payload);
 
-                $sent++;
-                $deliveredUserIds[$token->user_id] = true;
+                if ($delivered) {
+                    $sent++;
+                    $deliveredUserIds[$token->user_id] = true;
+                } else {
+                    $failed++;
+                }
             } catch (\Throwable $e) {
                 $failed++;
                 Log::warning('Failed to send notification to device', [
@@ -227,6 +232,8 @@ class NotificationService
                     'user_id' => $token->user_id,
                     'notification_id' => $notification->id,
                     'notification_type' => $notification->type,
+                    'token_mask' => substr($token->token, 0, 8) . '...' . substr($token->token, -4),
+                    'payload' => $payload->toArray(),
                     'error' => $e->getMessage(),
                 ]);
 

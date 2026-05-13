@@ -36,9 +36,6 @@ class SendPushNotificationJob implements ShouldQueue
     /** Per-execution timeout in seconds. */
     public int $timeout = 30;
 
-    /** Dedicated queue — keeps notifications isolated from other work. */
-    public string $queue = 'notifications';
-
     /**
      * @param int   $userId   Target user's primary key.
      * @param array $payload  Serialized NotificationPayload (via ->toArray()).
@@ -46,7 +43,9 @@ class SendPushNotificationJob implements ShouldQueue
     public function __construct(
         private readonly int   $userId,
         private readonly array $payload,
-    ) {}
+    ) {
+        $this->queue = 'notifications';
+    }
 
     // =========================================================================
     // Job middleware

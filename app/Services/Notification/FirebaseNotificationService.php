@@ -8,6 +8,7 @@ use App\Models\NotificationLog;
 use App\Models\User;
 use Kreait\Firebase\Contract\Messaging;
 use Kreait\Firebase\Exception\MessagingException;
+use Kreait\Firebase\Messaging\AndroidConfig;
 use Kreait\Firebase\Messaging\CloudMessage;
 use Kreait\Firebase\Messaging\Notification;
 use Illuminate\Support\Facades\Log;
@@ -53,7 +54,13 @@ class FirebaseNotificationService
         $message = $this->buildMessage($token, $payload);
 
         try {
-            $this->messaging->send($message);
+            $response = $this->messaging->send($message);
+
+            Log::info('[FCM] Notification sent', [
+                'token_mask' => $this->maskToken($token),
+                'payload' => $payload->toArray(),
+                'response' => $response,
+            ]);
 
             $this->writeLog(
                 userId:       $this->resolveUserId($token),
@@ -66,6 +73,12 @@ class FirebaseNotificationService
             return true;
 
         } catch (MessagingException $e) {
+            Log::error('[FCM] Notification send failed', [
+                'token_mask' => $this->maskToken($token),
+                'payload' => $payload->toArray(),
+                'error' => $e->getMessage(),
+            ]);
+
             return $this->handleSingleTokenFailure($token, $payload, $e);
         }
     }
@@ -98,6 +111,13 @@ class FirebaseNotificationService
                 foreach ($report->successes()->getItems() as $success) {
                     $successTokens[] = $success->target()->value();
                 }
+
+                Log::info('[FCM] Multicast notification sent', [
+                    'token_count' => count($chunk),
+                    'payload' => $payload->toArray(),
+                    'success_count' => $report->successes()->count(),
+                    'failure_count' => $report->failures()->count(),
+                ]);
 
                 foreach ($report->failures()->getItems() as $failure) {
                     $invalidToken = $failure->target()->value();
@@ -176,7 +196,10 @@ class FirebaseNotificationService
     {
         $message = CloudMessage::new()
             ->withNotification(Notification::create($payload->title, $payload->body))
-            ->withData($payload->toDataArray());
+            ->withData($payload->toDataArray())
+            ->withAndroidConfig(AndroidConfig::fromArray([
+                'priority' => 'high',
+            ]));
 
         if ($token !== null) {
             $message = $message->withToken($token);

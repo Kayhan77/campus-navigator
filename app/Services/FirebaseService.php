@@ -43,6 +43,15 @@ class FirebaseService
             $accessToken = $this->resolveAccessToken();
 
             if (empty($projectId) || empty($accessToken)) {
+                Log::warning('[FCM HTTP v1] Missing Firebase credentials or project id', [
+                    'token_mask' => $this->maskToken($token),
+                    'payload' => [
+                        'title' => $title,
+                        'body' => $body,
+                        'data' => $this->normalizeData($data),
+                    ],
+                ]);
+
                 return;
             }
 
@@ -62,6 +71,9 @@ class FirebaseService
                             'body' => $body,
                         ],
                         'data' => $this->normalizeData($data),
+                        'android' => [
+                            'priority' => 'HIGH',
+                        ],
                     ],
                 ],
             ]);
@@ -69,9 +81,26 @@ class FirebaseService
             if ($response->getStatusCode() >= 400) {
                 throw new \RuntimeException('FCM request failed with status ' . $response->getStatusCode());
             }
+
+            Log::info('[FCM HTTP v1] Notification sent', [
+                'token_mask' => $this->maskToken($token),
+                'payload' => [
+                    'title' => $title,
+                    'body' => $body,
+                    'data' => $this->normalizeData($data),
+                ],
+                'response_status' => $response->getStatusCode(),
+                'response_body' => (string) $response->getBody(),
+            ]);
         } catch (\Throwable $e) {
             // FCM errors must never break the main API flow.
             Log::warning('[FCM HTTP v1] Notification send failed', [
+                'token_mask' => $this->maskToken($token),
+                'payload' => [
+                    'title' => $title,
+                    'body' => $body,
+                    'data' => $this->normalizeData($data),
+                ],
                 'error' => $e->getMessage(),
             ]);
 
@@ -130,5 +159,16 @@ class FirebaseService
         }
 
         return $normalized;
+    }
+
+    private function maskToken(string $token): string
+    {
+        $length = strlen($token);
+
+        if ($length <= 12) {
+            return str_repeat('*', $length);
+        }
+
+        return substr($token, 0, 8) . '...' . substr($token, -4);
     }
 }
