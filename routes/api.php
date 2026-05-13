@@ -414,6 +414,8 @@ Route::middleware('auth:api')->prefix('v1')->group(function () {
     Route::patch('/item-claims/{claim}/reject', [ItemClaimController::class, 'reject']);
 
     // Device token registration for push notifications
+    Route::get('/device-tokens', [DeviceTokenController::class, 'index'])
+        ->middleware('throttle:10,1');
     Route::post('/device-tokens', [DeviceTokenController::class, 'store'])
         ->middleware('throttle:10,1');
     Route::delete('/device-tokens', [DeviceTokenController::class, 'destroy'])

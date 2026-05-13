@@ -15,6 +15,25 @@ class DeviceTokenController extends Controller
     ) {}
 
     /**
+     * List the authenticated user's saved device tokens.
+     *
+     * GET /api/v1/device-tokens
+     */
+    public function index(Request $request)
+    {
+        $deviceTokens = $request->user()
+            ->deviceTokens()
+            ->latest()
+            ->get(['id', 'token', 'platform', 'last_used_at', 'created_at', 'updated_at']);
+
+        return ApiResponse::success([
+            'saved' => $deviceTokens->isNotEmpty(),
+            'count' => $deviceTokens->count(),
+            'device_tokens' => $deviceTokens,
+        ], 'Device tokens retrieved successfully.');
+    }
+
+    /**
      * Register or refresh a device token for the authenticated user.
      *
      * POST /api/v1/device-tokens
