@@ -20,6 +20,11 @@ class AcademicSchedule extends Model
         'room_id'
     ];
 
+    protected $casts = [
+        'start_time' => 'datetime:H:i',
+        'end_time' => 'datetime:H:i',
+    ];
+
     public function room()
     {
         return $this->belongsTo(Room::class);

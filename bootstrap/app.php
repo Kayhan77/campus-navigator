@@ -23,6 +23,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(prepend: [
         ]);
 
+        // Don't redirect unauthenticated API requests to login
+        $middleware->redirectGuestsTo(fn (Request $request) => null);
+
         $middleware->alias([
             'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
             'admin'    => \App\Http\Middleware\AdminMiddleware::class,
@@ -52,7 +55,9 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (Throwable $e, Request $request) {
-            if (! $request->expectsJson()) {
+            // Force JSON response for API routes
+            $isApiRoute = str_starts_with($request->path(), 'api/');
+            if (! ($isApiRoute || $request->expectsJson())) {
                 return null;
             }
 
