@@ -13,7 +13,7 @@ class UserSeeder extends Seeder
     {
         $this->command->info("🔹 UserSeeder is running...");
 
-        $email = env('USER_EMAIL', 'fortest12034@gmail.com');
+        $email = env('USER_EMAIL', 'forreplit121@gmail.com');
 
         if (User::where('email', $email)->exists()) {
             $this->command->warn("User [{$email}] already exists. Skipping.");

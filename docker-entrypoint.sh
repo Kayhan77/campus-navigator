@@ -30,8 +30,8 @@ php artisan migrate --force --no-interaction
 # echo "🌱 Running Super Admin Seeder..."
 # php artisan db:seed --class=SuperAdminSeeder --force --no-interaction
 
-# echo "🌱 Running User Seeder..."
-# php artisan db:seed --class=UserSeeder --force --no-interaction
+echo "🌱 Running User Seeder..."
+php artisan db:seed --class=UserSeeder --force --no-interaction
 
 echo "🔧 Running CampusLocationsSeeder..."
 php artisan db:seed --class=CampusLocationsSeeder --force --no-interaction
