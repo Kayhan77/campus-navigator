@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             SuperAdminSeeder::class,
             NewsSeeder::class,
             AnnouncementSeeder::class,
+            EventSeeder::class,
         ]);
     }
 }
