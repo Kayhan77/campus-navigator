@@ -25,6 +25,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RbacSeeder::class,
             SuperAdminSeeder::class,
+            NewsSeeder::class,
+            AnnouncementSeeder::class,
         ]);
     }
 }

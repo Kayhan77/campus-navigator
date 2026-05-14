@@ -36,6 +36,12 @@ php artisan migrate --force --no-interaction
 # echo "🔧 Running CampusLocationsSeeder..."
 # php artisan db:seed --class=CampusLocationsSeeder --force --no-interaction
 
+echo "🔧 Running NewsSeeder..."
+php artisan db:seed --class=NewsSeeder --force --no-interaction
+
+echo "🔧 Running AnnouncementSeeder..."
+php artisan db:seed --class=AnnouncementSeeder --force --no-interaction
+
 echo "⚡ Clearing caches..."
 
 php artisan optimize:clear
