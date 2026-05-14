@@ -42,8 +42,13 @@ php artisan migrate --force --no-interaction
 # echo "🔧 Running AnnouncementSeeder..."
 # php artisan db:seed --class=AnnouncementSeeder --force --no-interaction
 
-echo "🔧 Running EventSeeder..."
-php artisan db:seed --class=EventSeeder --force --no-interaction
+# echo "🔧 Running EventSeeder..."
+# php artisan db:seed --class=EventSeeder --force --no-interaction
+
+echo "⚡ Running seeders..."
+php artisan db:seed --class=RbacSeeder --force --no-interaction
+php artisan db:seed --class=PermissionSeeder --force --no-interaction  
+php artisan db:seed --class=UserRoleSeeder --force --no-interaction
 echo "⚡ Clearing caches..."
 
 php artisan optimize:clear
