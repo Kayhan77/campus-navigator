@@ -8,14 +8,19 @@ use Illuminate\Queue\Middleware\RateLimited;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use App\Models\AcademicSchedule;
+use App\Models\Announcement;
 use App\Models\Building;
 use App\Models\Event;
 use App\Models\LostItem;
+use App\Models\News;
 use App\Models\Room;
 use App\Observers\AcademicScheduleObserver;
+use App\Observers\AnnouncementNotificationObserver;
 use App\Observers\BuildingObserver;
+use App\Observers\EventNotificationObserver;
 use App\Observers\EventObserver;
 use App\Observers\LostItemObserver;
+use App\Observers\NewsNotificationObserver;
 use App\Observers\RoomObserver;
 
 class AppServiceProvider extends ServiceProvider
@@ -36,6 +41,7 @@ class AppServiceProvider extends ServiceProvider
         $this->registerPasswordResetUrl();
         $this->registerJobRateLimiters();
         $this->registerSearchObservers();
+        $this->registerNotificationObservers();
     }
 
     // -------------------------------------------------------------------------
@@ -79,5 +85,16 @@ class AppServiceProvider extends ServiceProvider
         Room::observe(RoomObserver::class);
         LostItem::observe(LostItemObserver::class);
         AcademicSchedule::observe(AcademicScheduleObserver::class);
+    }
+
+    /**
+     * Bind Eloquent observers that send Firebase notifications
+     * when events, news, and announcements are created.
+     */
+    private function registerNotificationObservers(): void
+    {
+        Event::observe(EventNotificationObserver::class);
+        News::observe(NewsNotificationObserver::class);
+        Announcement::observe(AnnouncementNotificationObserver::class);
     }
 }
