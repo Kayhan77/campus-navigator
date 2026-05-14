@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Admin\AdminEventController;
 use App\Http\Controllers\Api\V1\Admin\AdminNewsController;
 use App\Http\Controllers\Api\V1\Admin\AdminAnnouncementController;
 use App\Http\Controllers\Api\V1\Admin\AdminNotificationController;
+use App\Http\Controllers\Api\V1\Admin\AdminPermissionController;
 use App\Http\Controllers\Api\V1\Admin\AdminRoomController;
 use App\Http\Controllers\Api\V1\Admin\AdminUserController;
 use App\Http\Controllers\Api\V1\AnnouncementController;
@@ -448,6 +449,11 @@ Route::middleware(['auth:api', 'admin'])->prefix('v1/admin')->group(function () 
     // RBAC management (super_admin only)
     Route::post('/users/{user}/assign-role', [AdminUserController::class, 'assignRole']);
     Route::put('/roles/{role}/permissions', [AdminUserController::class, 'syncRolePermissions']);
+
+    // Permission management
+    Route::get('/permissions', [AdminPermissionController::class, 'index']);
+    Route::get('/permissions/roles', [AdminPermissionController::class, 'rolesWithPermissions']);
+    Route::get('/permissions/role/{role}', [AdminPermissionController::class, 'getByRole']);
 
     // Event management
     Route::get('/events',              [AdminEventController::class, 'index']);
